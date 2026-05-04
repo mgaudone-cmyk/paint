@@ -1,124 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>PaintQuest Generator</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Storybook Paint Studio</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <h1>PaintQuest</h1>
-        <p>Generate your own paint-by-number art.</p>
-      </div>
-      <button id="galleryBtn" class="ghost-btn hidden">Gallery</button>
-    </header>
+<div class="app-shell">
+<header class="topbar">
+<div><h1>Storybook Paint Studio</h1><p>Original animated-character paint-by-number art.</p></div>
+<button id="studioBtn" class="ghost-btn hidden">Studio</button>
+</header>
 
-    <main>
-      <section id="generatorView" class="view active">
-        <div class="hero-card">
-          <h2>Create art on the fly</h2>
-          <p>Pick a style, difficulty, and color count. The app will generate a playable paint-by-number canvas instantly.</p>
-        </div>
+<main>
+<section id="studioView" class="view active">
+<div class="hero-card">
+<h2>Create a character painting</h2>
+<p>Generate original storybook-style characters with expressive eyes, magical palettes, and varied paint regions.</p>
+</div>
 
-        <div class="builder-card">
-          <label>
-            Art style
-            <select id="artType">
-              <option value="abstract">Abstract</option>
-              <option value="animal">Animal</option>
-              <option value="landscape">Landscape</option>
-              <option value="flower">Flower</option>
-              <option value="mandala">Mandala</option>
-              <option value="portrait">Portrait Style</option>
-              <option value="fantasy">Fantasy</option>
-            </select>
-          </label>
+<div class="builder-card">
+<label>Character type
+<select id="characterType">
+<option value="princess">Enchanted Princess</option>
+<option value="animal">Talking Animal Friend</option>
+<option value="fairy">Forest Fairy</option>
+<option value="hero">Brave Young Hero</option>
+<option value="sea">Sea Princess</option>
+<option value="snow">Snow Queen</option>
+<option value="beast">Gentle Beast</option>
+<option value="villain">Stylish Villain</option>
+</select>
+</label>
 
-          <label>
-            Difficulty
-            <select id="difficulty">
-              <option value="easy">Easy</option>
-              <option value="medium" selected>Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </label>
+<label>Scene
+<select id="sceneType">
+<option value="castle">Castle Glow</option>
+<option value="forest">Enchanted Forest</option>
+<option value="ocean">Ocean Dream</option>
+<option value="stars">Starry Night</option>
+<option value="garden">Royal Garden</option>
+</select>
+</label>
 
-          <label>
-            Colors
-            <select id="colorCount">
-              <option value="6">6 colors</option>
-              <option value="8" selected>8 colors</option>
-              <option value="12">12 colors</option>
-            </select>
-          </label>
+<label>Difficulty
+<select id="difficulty">
+<option value="easy">Easy</option>
+<option value="medium" selected>Medium</option>
+<option value="hard">Hard</option>
+</select>
+</label>
 
-          <button id="generateBtn">Generate Artwork</button>
-        </div>
+<label>Colors
+<select id="colorCount">
+<option value="8">8 colors</option>
+<option value="12" selected>12 colors</option>
+<option value="16">16 colors</option>
+</select>
+</label>
 
-        <div class="upload-card">
-          <h3>Custom image mode</h3>
-          <p>Upload an image and convert it into a simple grid-based paint-by-number.</p>
-          <div class="upload-row">
-            <input id="imageUpload" type="file" accept="image/*" />
-            <select id="paletteSize">
-              <option value="8">8 colors</option>
-              <option value="12" selected>12 colors</option>
-              <option value="16">16 colors</option>
-              <option value="24">24 colors</option>
-            </select>
-          </div>
-        </div>
+<button id="generateBtn">Generate Character</button>
+</div>
 
-        <div class="saved-section">
-          <h3>Saved generated artworks</h3>
-          <div id="savedGrid" class="template-grid"></div>
-        </div>
-      </section>
+<div class="saved-section">
+<h3>Saved characters</h3>
+<div id="savedGrid" class="template-grid"></div>
+</div>
+</section>
 
-      <section id="paintView" class="view">
-        <div class="game-header">
-          <div>
-            <h2 id="artTitle"></h2>
-            <p id="artMeta"></p>
-          </div>
-          <div class="progress-wrap">
-            <span id="progressText">0%</span>
-            <div class="progress-track"><div id="progressBar"></div></div>
-          </div>
-        </div>
+<section id="paintView" class="view">
+<div class="game-header">
+<div><h2 id="artTitle"></h2><p id="artMeta"></p></div>
+<div class="progress-wrap"><span id="progressText">0%</span><div class="progress-track"><div id="progressBar"></div></div></div>
+</div>
 
-        <div class="tool-row">
-          <button id="newVariantBtn">New Variant</button>
-          <button id="hintBtn">Hint</button>
-          <button id="undoBtn">Undo</button>
-          <button id="resetBtn" class="danger">Reset</button>
-          <button id="zoomInBtn">+</button>
-          <button id="zoomOutBtn">−</button>
-        </div>
+<div class="tool-row">
+<button id="newVariantBtn">New Variant</button>
+<button id="hintBtn">Hint</button>
+<button id="undoBtn">Undo</button>
+<button id="resetBtn" class="danger">Reset</button>
+<button id="zoomInBtn">+</button>
+<button id="zoomOutBtn">−</button>
+</div>
 
-        <div id="canvasStage" class="canvas-stage">
-          <div id="canvasInner" class="canvas-inner"></div>
-        </div>
+<div id="canvasStage" class="canvas-stage">
+<div id="canvasInner" class="canvas-inner"></div>
+</div>
 
-        <div id="palette" class="palette"></div>
-      </section>
-    </main>
+<div id="palette" class="palette"></div>
+</section>
+</main>
 
-    <div id="toast" class="toast"></div>
-
-    <div id="completeModal" class="modal hidden">
-      <div class="modal-card">
-        <div class="burst">★</div>
-        <h2>Artwork completed!</h2>
-        <p>You finished the painting.</p>
-        <button id="modalGalleryBtn">Back to generator</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
+<div id="toast" class="toast"></div>
+<div id="completeModal" class="modal hidden">
+<div class="modal-card">
+<div class="burst">★</div>
+<h2>Painting complete!</h2>
+<p>Your storybook character is finished.</p>
+<button id="modalStudioBtn">Back to studio</button>
+</div>
+</div>
+</div>
+<script src="app.js"></script>
 </body>
 </html>

@@ -1,77 +1,23 @@
-# PaintQuest Generator
+# Storybook Paint Studio
 
-This is an upgraded Paint-by-Number MVP that generates playable artwork on the fly based on the user’s selection.
+A focused Paint-by-Number web app that generates original animated-storybook character artwork.
 
-## What changed
-
-Instead of relying only on included art templates, this version lets the user generate new artwork dynamically by choosing:
-
-- Abstract
-- Animal
-- Landscape
-- Flower
-- Mandala
-- Portrait Style
-- Fantasy
-- Custom uploaded image
-
-The app then creates a playable SVG paint-by-number canvas immediately.
+This app does not copy protected characters. It generates original character archetypes using broad family-friendly animation conventions: expressive eyes, magical palettes, princess/fairy/hero/animal archetypes, storybook backgrounds, and varied organic paint regions.
 
 ## Features
 
-- Procedural artwork generation
-- Style selection
+- Original animated-character generator
+- Character types: Enchanted Princess, Talking Animal Friend, Forest Fairy, Brave Young Hero, Sea Princess, Snow Queen, Gentle Beast, Stylish Villain
+- Scene selection
 - Difficulty selection
-- Color count selection
-- Numbered SVG paint regions
-- Tap-to-paint gameplay
-- Correct/wrong tap feedback
-- Color palette with progress
-- Total progress bar
-- Hint button
-- Undo
-- Reset
+- 8, 12, or 16 colors
+- Tap-to-paint regions
+- Correct/wrong feedback
+- Hint, undo, reset
 - Zoom and pan
+- Local save
 - Saved generated artworks
-- Local progress save
-- Custom image upload mode
 
-## Files
+## GitHub Pages
 
-- `index.html`
-- `style.css`
-- `app.js`
-
-## How to run
-
-Open `index.html` in a browser.
-
-For best results, run with a local server:
-
-```bash
-python3 -m http.server 8000
-```
-
-Then open:
-
-```text
-http://localhost:8000
-```
-
-## GitHub Pages deployment
-
-1. Create a new GitHub repository.
-2. Upload:
-   - `index.html`
-   - `style.css`
-   - `app.js`
-3. Go to `Settings`.
-4. Go to `Pages`.
-5. Select `Deploy from branch`.
-6. Choose `main` and `/root`.
-7. Save.
-8. Open the generated GitHub Pages URL.
-
-## Important MVP note
-
-This version procedurally generates playable SVG regions. It does not use AI image generation. The custom image upload mode uses simplified grid-based color quantization. For a commercial version, the next upgrade would be true contour detection, automatic vectorization, and smoother region merging.
+Upload `index.html`, `style.css`, and `app.js` to the root of your repo, then enable GitHub Pages from Settings > Pages.
