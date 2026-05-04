@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Paint-by-Number V5</title>
+<title>Paint-by-Number V8 Edge Engine</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
 <div>
-<h1>Paint Studio V5</h1>
-<p>Clean line-art paint-by-number engine.</p>
+<h1>Paint Studio V8</h1>
+<p>Edge-aware paint-by-number conversion.</p>
 </div>
 <button id="studioBtn" class="ghost-btn hidden">Studio</button>
 </header>
@@ -19,8 +19,8 @@
 <main>
 <section id="studioView" class="view active">
 <div class="hero-card">
-<h2>Convert clean art into paint-by-number</h2>
-<p>This version is optimized for cartoon drawings, princess art, coloring pages, and simple illustrations. It preserves the original black outlines and creates clean clickable paint regions.</p>
+<h2>Convert art into clean paint-by-number</h2>
+<p>V8 uses edge-aware segmentation instead of a visible pixel grid. Preview the result, adjust settings, then commit when it looks usable.</p>
 </div>
 
 <div class="builder-card">
@@ -42,6 +42,14 @@
 </div>
 
 <div class="builder-card second">
+<label>Mode
+<select id="imageMode">
+<option value="lineart" selected>Clean cartoon / line art</option>
+<option value="anime">Anime / screenshot</option>
+<option value="photo">Photo / complex image</option>
+</select>
+</label>
+
 <label>Colors
 <select id="colorCount">
 <option value="8">8 colors</option>
@@ -51,32 +59,24 @@
 </select>
 </label>
 
-<label>Mode
-<select id="imageMode">
-<option value="lineart" selected>Clean cartoon / line art</option>
-<option value="anime">Anime / screenshot</option>
-<option value="photo">Photo / complex image</option>
+<label>Detail
+<select id="detailLevel">
+<option value="simple">Simple</option>
+<option value="balanced" selected>Balanced</option>
+<option value="detailed">Detailed</option>
 </select>
 </label>
 
-<label>Minimum region size
-<select id="regionSize">
-<option value="small">Small</option>
+<label>Edge strength
+<select id="edgeStrength">
+<option value="soft">Soft</option>
 <option value="medium" selected>Medium</option>
-<option value="large">Large</option>
+<option value="strong">Strong</option>
 </select>
 </label>
 
-<label>Quality
-<select id="qualityLevel">
-<option value="fast">Fast</option>
-<option value="hq" selected>High quality</option>
-<option value="max">Max detail</option>
-</select>
-</label>
-
-<button id="previewBtn">Preview Conversion</button>
-<button id="commitBtn" class="accent-btn" disabled>Commit to Paint</button>
+<button id="previewBtn">Preview</button>
+<button id="commitBtn" class="accent-btn" disabled>Commit</button>
 </div>
 
 <div class="preview-grid">
@@ -85,14 +85,14 @@
 <canvas id="cropCanvas"></canvas>
 </div>
 <div class="preview-card">
-<h3>Simplified Preview</h3>
+<h3>Conversion Preview</h3>
 <canvas id="previewCanvas"></canvas>
 </div>
 </div>
 
 <div class="note-card">
-<h3>What changed in V5</h3>
-<p>No more square grid. The black outline from the original image is preserved. The paint areas are grouped as clean regions, and numbers are shown only when the area is large enough.</p>
+<h3>Best settings</h3>
+<p>For simple princess/cartoon drawings, use Clean cartoon mode and Medium edge strength. For screenshots, use Anime mode. For photos, use Photo mode and Simple detail.</p>
 </div>
 </section>
 
@@ -153,6 +153,6 @@
 </div>
 </div>
 
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

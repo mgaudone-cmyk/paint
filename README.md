@@ -1,19 +1,27 @@
-# Paint-by-Number V5 - Clean Line-Art Engine
+# Paint-by-Number V8 - Edge-Aware Engine
 
-This fixes the unusable grid problem.
+Version: V8
+Cache bust: ?v=9
+Engine: Edge-aware segmentation
 
-## Key changes
+## Why this version exists
 
-- No more square grid borders
-- Uses a canvas renderer instead of one SVG path per cell
-- Preserves original black outlines
-- Groups color areas into clickable regions
-- Shows labels only on large enough regions
-- Better for cartoon art, princess art, coloring pages, and simple illustrations
+Previous versions used coarse pixel clustering, which created blocky and confusing mosaics. V8 uses edge detection first, then grows paint regions inside edge boundaries.
 
-## Upload to GitHub
+## Key upgrades
 
-Replace your files with:
+- Edge-first segmentation
+- Cleaner black outline preservation
+- Higher-resolution working canvas
+- Better preview before commit
+- Line art / anime / photo modes
+- Detail and edge strength controls
+- Better label placement
+- Fit, Center, and Sections navigation
+
+## Upload
+
+Replace GitHub files with:
 
 - index.html
 - style.css
@@ -21,23 +29,4 @@ Replace your files with:
 
 Open:
 
-https://mgaudone-cmyk.github.io/paint/?v=8
-
-
-## V6 changes
-
-- Preview conversion before committing
-- Commit button stays disabled until preview is generated
-- Fit, Center, and Sections navigation controls
-- 9-position quick navigation for large images
-- Settings changes invalidate the preview so users can adjust and regenerate before painting
-
-
-## V7 changes
-
-- High-resolution working canvas: 120–220 instead of coarse grid
-- Anime/screenshot mode
-- Smoother posterized preview
-- Better palette grouping
-- Subtitle/text-band softening for screenshots
-- Larger minimum label thresholds to reduce clutter
+https://mgaudone-cmyk.github.io/paint/?v=9
