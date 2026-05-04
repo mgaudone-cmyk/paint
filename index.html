@@ -1,120 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Princess Paint Studio V3</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Paint-by-Number Photo Engine V4</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <h1>Princess Paint Studio V3</h1>
-        <p>Image-based paint-by-number converter.</p>
-      </div>
-      <button id="studioBtn" class="ghost-btn hidden">Studio</button>
-    </header>
+<div class="app-shell">
+<header class="topbar">
+<div>
+<h1>Photo Paint Studio V4</h1>
+<p>Cleaner photo-to-paint-by-number conversion.</p>
+</div>
+<button id="studioBtn" class="ghost-btn hidden">Studio</button>
+</header>
 
-    <main>
-      <section id="studioView" class="view active">
-        <div class="hero-card">
-          <h2>Create from a real illustration</h2>
-          <p>Upload a princess-style illustration. The app will simplify colors, detect regions, and turn it into a playable paint-by-number canvas.</p>
-        </div>
+<main>
+<section id="studioView" class="view active">
+<div class="hero-card">
+<h2>Convert a photo into paint-by-number</h2>
+<p>This version is optimized for real photos. Crop the subject, simplify the background, reduce texture, and generate cleaner playable regions.</p>
+</div>
 
-        <div class="prompt-card">
-          <h3>Suggested image prompt</h3>
-          <p>Use this prompt in an image generator, then upload the result here.</p>
-          <textarea id="promptBox" readonly>Original fairy-tale princess, expressive large eyes, flowing hair, elegant layered dress, magical castle garden background, clean storybook illustration, soft cinematic lighting, polished children’s book art, highly detailed but simple enough for paint by number, no text, no watermark</textarea>
-          <button id="copyPromptBtn">Copy Prompt</button>
-        </div>
+<div class="builder-card">
+<label>Upload photo
+<input id="imageUpload" type="file" accept="image/*" />
+</label>
 
-        <div class="builder-card">
-          <label>
-            Upload illustration
-            <input id="imageUpload" type="file" accept="image/*" />
-          </label>
+<label>Crop zoom
+<input id="cropZoom" type="range" min="1" max="3" step="0.05" value="1.35" />
+</label>
 
-          <label>
-            Color count
-            <select id="colorCount">
-              <option value="8">8 colors</option>
-              <option value="12" selected>12 colors</option>
-              <option value="16">16 colors</option>
-              <option value="20">20 colors</option>
-            </select>
-          </label>
+<label>Crop X
+<input id="cropX" type="range" min="-100" max="100" step="1" value="20" />
+</label>
 
-          <label>
-            Detail level
-            <select id="detailLevel">
-              <option value="low">Low detail</option>
-              <option value="medium" selected>Medium detail</option>
-              <option value="high">High detail</option>
-            </select>
-          </label>
+<label>Crop Y
+<input id="cropY" type="range" min="-100" max="100" step="1" value="-5" />
+</label>
+</div>
 
-          <button id="convertBtn">Convert to Paint-by-Number</button>
-        </div>
+<div class="builder-card second">
+<label>Colors
+<select id="colorCount">
+<option value="8">8 colors</option>
+<option value="10" selected>10 colors</option>
+<option value="12">12 colors</option>
+</select>
+</label>
 
-        <div class="preview-grid">
-          <div class="preview-card">
-            <h3>Original</h3>
-            <canvas id="originalCanvas"></canvas>
-          </div>
-          <div class="preview-card">
-            <h3>Simplified Preview</h3>
-            <canvas id="previewCanvas"></canvas>
-          </div>
-        </div>
+<label>Detail
+<select id="detailLevel">
+<option value="simple">Simple</option>
+<option value="balanced" selected>Balanced</option>
+<option value="detailed">Detailed</option>
+</select>
+</label>
 
-        <div class="note-card">
-          <h3>Why this version is better</h3>
-          <p>This version starts from a real image instead of trying to draw a princess with simple geometric code. That means the face, hair, dress, pose, and background quality depend on the uploaded illustration, while the app handles the paint-by-number conversion.</p>
-        </div>
-      </section>
+<label>Background
+<select id="bgMode">
+<option value="simplify" selected>Simplify background</option>
+<option value="keep">Keep background</option>
+<option value="plain">Plain background</option>
+</select>
+</label>
 
-      <section id="paintView" class="view">
-        <div class="game-header">
-          <div>
-            <h2 id="artTitle">Princess Painting</h2>
-            <p id="artMeta"></p>
-          </div>
-          <div class="progress-wrap">
-            <span id="progressText">0%</span>
-            <div class="progress-track"><div id="progressBar"></div></div>
-          </div>
-        </div>
+<button id="convertBtn">Convert</button>
+</div>
 
-        <div class="tool-row">
-          <button id="hintBtn">Hint</button>
-          <button id="undoBtn">Undo</button>
-          <button id="resetBtn" class="danger">Reset</button>
-          <button id="zoomInBtn">+</button>
-          <button id="zoomOutBtn">−</button>
-        </div>
+<div class="preview-grid">
+<div class="preview-card">
+<h3>Crop Preview</h3>
+<canvas id="cropCanvas"></canvas>
+</div>
+<div class="preview-card">
+<h3>Simplified Preview</h3>
+<canvas id="previewCanvas"></canvas>
+</div>
+</div>
 
-        <div id="canvasStage" class="canvas-stage">
-          <div id="canvasInner" class="canvas-inner"></div>
-        </div>
+<div class="note-card">
+<h3>Recommended for your dog photo</h3>
+<p>Use crop zoom around 1.5–2.0, move Crop X to the right, and use “Simplify background.” The goal is to make the dog larger and reduce couch texture before conversion.</p>
+</div>
+</section>
 
-        <div id="palette" class="palette"></div>
-      </section>
-    </main>
+<section id="paintView" class="view">
+<div class="game-header">
+<div>
+<h2 id="artTitle">Paint-by-Number</h2>
+<p id="artMeta"></p>
+</div>
+<div class="progress-wrap">
+<span id="progressText">0%</span>
+<div class="progress-track"><div id="progressBar"></div></div>
+</div>
+</div>
 
-    <div id="toast" class="toast"></div>
+<div class="tool-row">
+<button id="togglePreviewBtn">Color Preview</button>
+<button id="hintBtn">Hint</button>
+<button id="undoBtn">Undo</button>
+<button id="resetBtn" class="danger">Reset</button>
+<button id="zoomInBtn">+</button>
+<button id="zoomOutBtn">−</button>
+</div>
 
-    <div id="completeModal" class="modal hidden">
-      <div class="modal-card">
-        <div class="burst">★</div>
-        <h2>Painting complete!</h2>
-        <p>Your image-based paint-by-number is finished.</p>
-        <button id="modalStudioBtn">Back to studio</button>
-      </div>
-    </div>
-  </div>
+<div id="canvasStage" class="canvas-stage">
+<div id="canvasInner" class="canvas-inner"></div>
+</div>
 
-  <script src="app.js?v=4"></script>
+<div id="palette" class="palette"></div>
+</section>
+</main>
+
+<div id="toast" class="toast"></div>
+<div id="completeModal" class="modal hidden">
+<div class="modal-card">
+<div class="burst">★</div>
+<h2>Complete!</h2>
+<p>Your paint-by-number is finished.</p>
+<button id="modalStudioBtn">Back to studio</button>
+</div>
+</div>
+</div>
+
+<script src="app.js?v=5"></script>
 </body>
 </html>
