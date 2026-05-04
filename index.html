@@ -3,44 +3,53 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Storybook Paint Studio</title>
+<title>Princess Paint Studio</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
-<div><h1>Storybook Paint Studio</h1><p>Original animated-character paint-by-number art.</p></div>
+<div>
+<h1>Princess Paint Studio</h1>
+<p>Original fairy-tale princess paint-by-number art.</p>
+</div>
 <button id="studioBtn" class="ghost-btn hidden">Studio</button>
 </header>
 
 <main>
 <section id="studioView" class="view active">
 <div class="hero-card">
-<h2>Create a character painting</h2>
-<p>Generate original storybook-style characters with expressive eyes, magical palettes, and varied paint regions.</p>
+<h2>Create a princess painting</h2>
+<p>Generate original princess-style characters with expressive eyes, flowing hair, layered dresses, accessories, and varied paint regions.</p>
 </div>
 
 <div class="builder-card">
-<label>Character type
-<select id="characterType">
-<option value="princess">Enchanted Princess</option>
-<option value="animal">Talking Animal Friend</option>
-<option value="fairy">Forest Fairy</option>
-<option value="hero">Brave Young Hero</option>
+<label>Princess style
+<select id="princessType">
+<option value="royal">Royal Ball Princess</option>
+<option value="forest">Forest Princess</option>
 <option value="sea">Sea Princess</option>
-<option value="snow">Snow Queen</option>
-<option value="beast">Gentle Beast</option>
-<option value="villain">Stylish Villain</option>
+<option value="snow">Snow Princess</option>
+<option value="rose">Rose Garden Princess</option>
+<option value="star">Star Princess</option>
+</select>
+</label>
+
+<label>Pose
+<select id="poseType">
+<option value="front">Classic Portrait</option>
+<option value="threequarter">Three-Quarter Turn</option>
+<option value="dancing">Dancing Dress</option>
 </select>
 </label>
 
 <label>Scene
 <select id="sceneType">
 <option value="castle">Castle Glow</option>
-<option value="forest">Enchanted Forest</option>
-<option value="ocean">Ocean Dream</option>
-<option value="stars">Starry Night</option>
 <option value="garden">Royal Garden</option>
+<option value="forest">Enchanted Forest</option>
+<option value="stars">Starry Night</option>
+<option value="ocean">Ocean Balcony</option>
 </select>
 </label>
 
@@ -52,19 +61,11 @@
 </select>
 </label>
 
-<label>Colors
-<select id="colorCount">
-<option value="8">8 colors</option>
-<option value="12" selected>12 colors</option>
-<option value="16">16 colors</option>
-</select>
-</label>
-
-<button id="generateBtn" onclick="generateFromControls()">Generate Character</button>
+<button id="generateBtn" onclick="generateFromControls()">Generate Princess</button>
 </div>
 
 <div class="saved-section">
-<h3>Saved characters</h3>
+<h3>Saved princesses</h3>
 <div id="savedGrid" class="template-grid"></div>
 </div>
 </section>
@@ -97,11 +98,11 @@
 <div class="modal-card">
 <div class="burst">★</div>
 <h2>Painting complete!</h2>
-<p>Your storybook character is finished.</p>
+<p>Your princess artwork is finished.</p>
 <button id="modalStudioBtn">Back to studio</button>
 </div>
 </div>
 </div>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

@@ -1,88 +1,269 @@
 let savedArtworks=[];
-try{
-  savedArtworks=JSON.parse(localStorage.getItem("storybookPaint:saved")||"[]");
-}catch(e){
-  savedArtworks=[];
-}
+try{savedArtworks=JSON.parse(localStorage.getItem("princessPaint:v2saved")||"[]")}catch(e){savedArtworks=[]}
+
 let state={currentTemplate:null,selectedColor:1,completed:new Set(),undoStack:[],zoom:1,pan:{x:0,y:0},dragging:false,lastPoint:null};
 const $=id=>document.getElementById(id);
+
 const palettes={
-princess:["#2d1e2f","#f7c6a3","#f3a683","#ffd6e0","#ff5d8f","#c77dff","#7b2cbf","#ffd166","#fff3b0","#8ecae6","#ffffff","#4a4e69","#9a8c98","#f2e9e4","#b5838d","#6d597a"],
-animal:["#3a2e2a","#8d5524","#c68642","#e0ac69","#ffdbac","#ffffff","#2b2d42","#457b9d","#a8dadc","#e63946","#f4a261","#7f5539","#b08968","#6c584c","#dde5b6","#ffd166"],
-fairy:["#263238","#f8c8a9","#ffe5ec","#cdb4db","#bde0fe","#a2d2ff","#95d5b2","#52b788","#ffd6ff","#e7c6ff","#ffafcc","#ffffff","#7b2cbf","#4cc9f0","#80ed99","#f72585"],
-hero:["#1d3557","#457b9d","#a8dadc","#f1faee","#e63946","#ffb703","#fb8500","#f7c6a3","#2b2d42","#ffffff","#6c757d","#8338ec","#06d6a0","#ffd166","#ef476f","#118ab2"],
-sea:["#023047","#126782","#219ebc","#8ecae6","#caf0f8","#ffafcc","#ffc8dd","#cdb4db","#f7c6a3","#ffb703","#ffffff","#006d77","#83c5be","#4cc9f0","#7209b7","#f72585"],
+royal:["#2b193d","#ffd6a5","#f8b195","#f67280","#c06c84","#6c5b7b","#355c7d","#fff1b8","#f9c74f","#ffffff","#7b2cbf","#c77dff","#ffafcc","#bde0fe","#4a4e69","#f2e9e4"],
+forest:["#1b4332","#2d6a4f","#40916c","#74c69d","#d8f3dc","#ffd6a5","#f7b267","#6d597a","#b56576","#e56b6f","#ffffff","#283618","#dda15e","#bc6c25","#fefae0","#95d5b2"],
+sea:["#03045e","#023e8a","#0077b6","#0096c7","#48cae4","#90e0ef","#caf0f8","#ffd6a5","#ffafcc","#cdb4db","#7209b7","#f72585","#ffffff","#006d77","#83c5be","#ffb703"],
 snow:["#0b132b","#1c2541","#3a506b","#5bc0be","#caf0f8","#e0fbfc","#ffffff","#dbe7ff","#bde0fe","#a2d2ff","#cdb4db","#f7c6ff","#ffd6ff","#8ecae6","#4cc9f0","#90e0ef"],
-beast:["#2b2118","#5c4033","#7f5539","#9c6644","#b08968","#ddb892","#e6ccb2","#283618","#606c38","#dda15e","#bc6c25","#fefae0","#ffffff","#3d405b","#81b29a","#e07a5f"],
-villain:["#0b0014","#240046","#3c096c","#5a189a","#7b2cbf","#9d4edd","#c77dff","#e0aaff","#2b2d42","#ef233c","#d90429","#ffffff","#ffd166","#006466","#065a60","#111111"]};
+rose:["#590d22","#800f2f","#a4133c","#c9184a","#ff4d6d","#ff8fa3","#ffb3c1","#fff0f3","#ffd6a5","#f7b267","#ffffff","#006d77","#83c5be","#cdb4db","#7209b7","#f72585"],
+star:["#10002b","#240046","#3c096c","#5a189a","#7b2cbf","#9d4edd","#c77dff","#e0aaff","#ffd166","#ffafcc","#caf0f8","#ffffff","#4cc9f0","#f72585","#06d6a0","#118ab2"]
+};
 
-function init(){bindEvents();renderSavedGrid()}
+function init(){
+  bindEvents();
+  renderSavedGrid();
+}
+
 function bindEvents(){
-$("generateBtn").addEventListener("click",generateFromControls);
-$("studioBtn").addEventListener("click",showStudio);
-$("newVariantBtn").addEventListener("click",generateFromCurrentStyle);
-$("hintBtn").addEventListener("click",showHint);
-$("undoBtn").addEventListener("click",undo);
-$("resetBtn").addEventListener("click",resetCurrent);
-$("zoomInBtn").addEventListener("click",()=>setZoom(state.zoom+.15));
-$("zoomOutBtn").addEventListener("click",()=>setZoom(state.zoom-.15));
-$("modalStudioBtn").addEventListener("click",showStudio);
-const stage=$("canvasStage");
-stage.addEventListener("pointerdown",e=>{state.dragging=true;state.lastPoint={x:e.clientX,y:e.clientY};stage.setPointerCapture(e.pointerId)});
-stage.addEventListener("pointermove",e=>{if(!state.dragging)return;const dx=e.clientX-state.lastPoint.x,dy=e.clientY-state.lastPoint.y;if(Math.abs(dx)+Math.abs(dy)>2){state.pan.x+=dx;state.pan.y+=dy;state.lastPoint={x:e.clientX,y:e.clientY};applyTransform()}});
-stage.addEventListener("pointerup",()=>state.dragging=false);
-}
-function generateFromControls(){const t=$("characterType").value,s=$("sceneType").value,d=$("difficulty").value,c=Number($("colorCount").value);const art=generateArtwork(t,s,d,c);saveGenerated(art);startTemplate(art)}
-function generateFromCurrentStyle(){const t=state.currentTemplate;if(!t)return;const art=generateArtwork(t.characterType,t.sceneType,t.difficultyKey,t.colors.length);saveGenerated(art);startTemplate(art)}
-
-function generateArtwork(characterType,sceneType,difficulty,colorCount){
-const seed=Date.now(),colors=shuffle([...palettes[characterType]]).slice(0,colorCount);
-const detail=difficulty==="easy"?16:difficulty==="medium"?30:52;
-let regions=[...sceneBackground(sceneType,colorCount),...characterBase(characterType,colorCount),...characterDetails(characterType,colorCount),...organicDecor(detail,colorCount)];
-regions=regions.map((r,i)=>({...r,id:`${r.id}-${i}`,n:norm(r.n,colorCount)}));
-return{id:`storybook-${characterType}-${seed}`,title:titleFor(characterType)+" #"+String(seed).slice(-4),category:"Storybook Character",characterType,sceneType,difficulty:titleCase(difficulty),difficultyKey:difficulty,colors,viewBox:"0 0 420 420",regions}
+  $("generateBtn").onclick=generateFromControls;
+  $("studioBtn").addEventListener("click",showStudio);
+  $("newVariantBtn").addEventListener("click",generateVariant);
+  $("hintBtn").addEventListener("click",showHint);
+  $("undoBtn").addEventListener("click",undo);
+  $("resetBtn").addEventListener("click",resetCurrent);
+  $("zoomInBtn").addEventListener("click",()=>setZoom(state.zoom+.15));
+  $("zoomOutBtn").addEventListener("click",()=>setZoom(state.zoom-.15));
+  $("modalStudioBtn").addEventListener("click",showStudio);
+  const stage=$("canvasStage");
+  stage.addEventListener("pointerdown",e=>{state.dragging=true;state.lastPoint={x:e.clientX,y:e.clientY};stage.setPointerCapture(e.pointerId)});
+  stage.addEventListener("pointermove",e=>{if(!state.dragging)return;const dx=e.clientX-state.lastPoint.x,dy=e.clientY-state.lastPoint.y;if(Math.abs(dx)+Math.abs(dy)>2){state.pan.x+=dx;state.pan.y+=dy;state.lastPoint={x:e.clientX,y:e.clientY};applyTransform()}});
+  stage.addEventListener("pointerup",()=>state.dragging=false);
 }
 
-function sceneBackground(scene,c){let r=[{id:"bg",n:1,shape:"rect",attrs:{x:0,y:0,width:420,height:420},label:[45,45]}];
-if(scene==="castle"){r.push({id:"sky",n:2,shape:"path",d:"M0 0 H420 V195 C340 155 270 160 210 195 C130 240 80 180 0 220 Z",label:[90,105]},{id:"castle",n:3,shape:"path",d:"M70 420 V235 H105 V175 H140 V235 H180 V155 H220 V235 H265 V185 H305 V235 H350 V420 Z",label:[210,310]},{id:"roof1",n:4,shape:"path",d:"M90 175 L122 105 L155 175 Z",label:[122,150]},{id:"roof2",n:4,shape:"path",d:"M182 155 L210 82 L238 155 Z",label:[210,130]},{id:"moon",n:5,shape:"circle",attrs:{cx:330,cy:80,r:38},label:[330,80]})}
-if(scene==="forest"){r.push({id:"forestSky",n:2,shape:"path",d:"M0 0 H420 V250 C330 205 255 225 190 250 C110 285 55 250 0 275 Z",label:[80,80]});for(let i=0;i<6;i++){let x=35+i*70+rand(-10,10);r.push({id:`tree${i}`,n:3+i%3,shape:"path",d:`M${x} 420 L${x+20} 240 L${x+42} 420 Z`,label:[x+22,335]},{id:`crown${i}`,n:5+i%3,shape:"circle",attrs:{cx:x+20,cy:215+rand(-20,20),r:55+rand(-12,12)},label:[x+20,215]})}}
-if(scene==="ocean"){r.push({id:"water",n:2,shape:"path",d:"M0 230 C70 200 120 250 185 220 C250 190 300 240 420 205 V420 H0 Z",label:[210,320]},{id:"sun",n:3,shape:"circle",attrs:{cx:325,cy:95,r:48},label:[325,95]},{id:"wave",n:4,shape:"path",d:"M0 285 C80 250 130 310 210 275 C290 240 340 300 420 260 V330 C330 295 270 335 205 315 C125 290 80 330 0 300 Z",label:[210,292]})}
-if(scene==="stars"){r.push({id:"glow",n:2,shape:"circle",attrs:{cx:210,cy:165,r:165},label:[210,115]});for(let i=0;i<14;i++){let x=rand(25,395),y=rand(25,210),s=rand(8,18);r.push({id:`star${i}`,n:3+i%4,shape:"path",d:starPath(x,y,s),label:[x,y]})}}
-if(scene==="garden"){r.push({id:"gardenSky",n:2,shape:"path",d:"M0 0 H420 V230 C320 190 260 230 210 205 C135 170 80 235 0 200 Z",label:[80,85]},{id:"grass",n:3,shape:"path",d:"M0 240 C95 205 145 260 230 225 C305 195 360 245 420 215 V420 H0 Z",label:[210,330]});for(let i=0;i<12;i++){let x=rand(20,400),y=rand(275,400),s=rand(10,22);r.push({id:`flower${i}`,n:4+i%5,shape:"circle",attrs:{cx:x,cy:y,r:s},label:[x,y]})}}
-return r}
+function generateFromControls(){
+  const p=$("princessType").value,pose=$("poseType").value,scene=$("sceneType").value,d=$("difficulty").value;
+  const art=generatePrincess(p,pose,scene,d);
+  saveGenerated(art);
+  startTemplate(art);
+}
 
-function characterBase(type,c){let r=[],skin=6,hair=7,accent=8,eye=9,dress=10;
-if(["princess","fairy","hero","sea","snow","villain"].includes(type)){
-r.push({id:"hairBack",n:hair,shape:"path",d:"M105 188 C75 60 345 50 318 205 C300 115 255 82 210 82 C160 82 118 112 105 188 Z",label:[210,86]},{id:"face",n:skin,shape:"ellipse",attrs:{cx:210,cy:178,rx:82,ry:99,rot:0},label:[210,178]},{id:"neck",n:skin,shape:"path",d:"M175 260 C188 285 232 285 245 260 L250 335 H170 Z",label:[210,300]},{id:"body",n:dress,shape:"path",d:"M100 420 C118 320 302 320 320 420 Z",label:[210,370]},{id:"leyeW",n:11,shape:"ellipse",attrs:{cx:178,cy:165,rx:24,ry:18,rot:-4},label:[178,165]},{id:"reyeW",n:11,shape:"ellipse",attrs:{cx:242,cy:165,rx:24,ry:18,rot:4},label:[242,165]},{id:"leye",n:eye,shape:"circle",attrs:{cx:181,cy:166,r:10},label:[181,166]},{id:"reye",n:eye,shape:"circle",attrs:{cx:239,cy:166,r:10},label:[239,166]},{id:"nose",n:skin+1,shape:"path",d:"M210 176 L197 218 L222 218 Z",label:[209,205]},{id:"mouth",n:12,shape:"path",d:"M178 235 C200 254 228 254 250 235 C235 270 194 270 178 235 Z",label:[213,250]},{id:"cheekL",n:12,shape:"ellipse",attrs:{cx:155,cy:218,rx:18,ry:10,rot:-8},label:[155,218]},{id:"cheekR",n:12,shape:"ellipse",attrs:{cx:265,cy:218,rx:18,ry:10,rot:8},label:[265,218]})}
-if(type==="princess"){r.push({id:"crown",n:4,shape:"path",d:"M150 95 L175 45 L210 88 L245 45 L270 95 Z",label:[210,78]},{id:"gown",n:10,shape:"path",d:"M130 340 C155 300 265 300 290 340 L340 420 H80 Z",label:[210,380]},{id:"panel",n:5,shape:"path",d:"M195 325 C180 365 175 395 170 420 H250 C242 385 235 360 225 325 Z",label:[210,380]})}
-if(type==="fairy"){r.push({id:"wingL",n:4,shape:"path",d:"M155 250 C70 170 75 80 175 140 C140 170 140 220 155 250 Z",label:[125,165]},{id:"wingR",n:5,shape:"path",d:"M265 250 C350 170 345 80 245 140 C280 170 280 220 265 250 Z",label:[295,165]},{id:"leafDress",n:10,shape:"path",d:"M150 330 C185 300 235 300 270 330 L235 420 H185 Z",label:[210,370]})}
-if(type==="hero"){r.push({id:"cape",n:5,shape:"path",d:"M140 275 C75 320 60 380 70 420 H185 C170 360 170 315 140 275 Z",label:[125,360]},{id:"shirt",n:10,shape:"path",d:"M125 420 L155 300 H265 L295 420 Z",label:[210,365]},{id:"belt",n:4,shape:"rect",attrs:{x:145,y:335,width:130,height:24},label:[210,347]})}
-if(type==="sea"){r.push({id:"hairWave",n:7,shape:"path",d:"M105 190 C55 115 115 50 210 70 C315 45 370 125 310 225 C290 155 245 110 210 105 C165 100 120 135 105 190 Z",label:[210,90]},{id:"tail",n:5,shape:"path",d:"M160 320 C180 360 180 395 130 420 H290 C240 395 240 360 260 320 C230 345 190 345 160 320 Z",label:[210,380]},{id:"shell",n:12,shape:"path",d:"M155 305 C175 275 195 275 210 305 C225 275 250 275 270 305 L255 335 H170 Z",label:[210,315]})}
-if(type==="snow"){r.push({id:"iceCape",n:5,shape:"path",d:"M120 275 C95 330 90 375 90 420 H330 C330 375 325 330 300 275 C250 315 170 315 120 275 Z",label:[210,360]},{id:"braid",n:7,shape:"path",d:"M275 130 C330 175 335 250 285 315 C305 245 295 190 255 150 Z",label:[298,220]},{id:"flake",n:11,shape:"path",d:"M210 300 L220 330 L250 320 L230 345 L255 365 L225 360 L210 390 L195 360 L165 365 L190 345 L170 320 L200 330 Z",label:[210,345]})}
-if(type==="villain"){r.push({id:"collarL",n:5,shape:"path",d:"M145 270 L65 190 L120 330 Z",label:[110,260]},{id:"collarR",n:5,shape:"path",d:"M275 270 L355 190 L300 330 Z",label:[310,260]},{id:"cloak",n:2,shape:"path",d:"M100 420 C110 315 310 315 320 420 Z",label:[210,372]},{id:"browL",n:1,shape:"path",d:"M150 145 L205 158 L200 170 L148 158 Z",label:[175,156]},{id:"browR",n:1,shape:"path",d:"M270 145 L215 158 L220 170 L272 158 Z",label:[245,156]})}
-if(type==="animal"||type==="beast"){let n=type==="beast"?6:2;r.push({id:"animalBody",n:n,shape:"ellipse",attrs:{cx:210,cy:245,rx:112,ry:105,rot:0},label:[210,245]},{id:"animalHead",n:n+1,shape:"circle",attrs:{cx:210,cy:145,r:88},label:[210,145]},{id:"earL",n:n+2,shape:"path",d:"M145 105 L100 35 L185 70 Z",label:[145,70]},{id:"earR",n:n+2,shape:"path",d:"M275 105 L320 35 L235 70 Z",label:[275,70]},{id:"muzzle",n:5,shape:"ellipse",attrs:{cx:210,cy:185,rx:45,ry:35,rot:0},label:[210,185]},{id:"eyeLW",n:11,shape:"ellipse",attrs:{cx:175,cy:135,rx:23,ry:18,rot:-5},label:[175,135]},{id:"eyeRW",n:11,shape:"ellipse",attrs:{cx:245,cy:135,rx:23,ry:18,rot:5},label:[245,135]},{id:"eyeL",n:9,shape:"circle",attrs:{cx:178,cy:136,r:10},label:[178,136]},{id:"eyeR",n:9,shape:"circle",attrs:{cx:242,cy:136,r:10},label:[242,136]},{id:"animalNose",n:1,shape:"path",d:"M210 165 L190 190 L230 190 Z",label:[210,183]},{id:"animalSmile",n:12,shape:"path",d:"M175 205 C200 235 225 235 250 205 C235 250 190 250 175 205 Z",label:[213,228]},{id:"pawL",n:5,shape:"circle",attrs:{cx:160,cy:335,r:30},label:[160,335]},{id:"pawR",n:5,shape:"circle",attrs:{cx:260,cy:335,r:30},label:[260,335]});if(type==="beast"){r.push({id:"hornL",n:4,shape:"path",d:"M145 80 C105 20 75 25 105 110 Z",label:[112,65]},{id:"hornR",n:4,shape:"path",d:"M275 80 C315 20 345 25 315 110 Z",label:[308,65]},{id:"mane",n:8,shape:"path",d:"M105 155 C70 85 125 55 210 60 C295 55 350 85 315 155 C280 105 245 95 210 100 C175 95 140 105 105 155 Z",label:[210,90]})}}
-return r}
+function generateVariant(){
+  const t=state.currentTemplate;if(!t)return;
+  const art=generatePrincess(t.princessType,t.poseType,t.sceneType,t.difficultyKey);
+  saveGenerated(art);
+  startTemplate(art);
+}
 
-function characterDetails(type,c){let r=[];for(let i=0;i<8;i++){let side=i%2===0?-1:1,x=210+side*rand(30,70),y=rand(198,235);r.push({id:`tiny${i}`,n:12+i%4,shape:"circle",attrs:{cx:x,cy:y,r:rand(4,8)},label:[x,y]})}for(let i=0;i<10;i++){let x=rand(100,320),y=rand(285,410);r.push({id:`gem${i}`,n:4+i%8,shape:"ellipse",attrs:{cx:x,cy:y,rx:rand(7,15),ry:rand(5,13),rot:rand(0,160)},label:[x,y]})}return r}
-function organicDecor(count,c){let r=[];for(let i=0;i<count;i++){let zone=Math.random(),x,y,size;if(zone<.35){x=rand(20,400);y=rand(20,160);size=rand(10,32)}else if(zone<.7){x=rand(45,375);y=rand(250,410);size=rand(12,38)}else{x=rand(20,400);y=rand(120,350);size=rand(8,24)}let kind=Math.random();if(kind<.35)r.push(blobRegion(`blob${i}`,x,y,size,5+i%5,i%c+1));else if(kind<.65)r.push({id:`ell${i}`,n:i%c+1,shape:"ellipse",attrs:{cx:x,cy:y,rx:size,ry:Math.max(7,size*rand(45,95)/100),rot:rand(0,180)},label:[x,y]});else r.push({id:`starOrganic${i}`,n:i%c+1,shape:"path",d:starPath(x,y,size),label:[x,y]})}return r}
-function blobRegion(id,cx,cy,radius,points,n){let coords=[];for(let i=0;i<points;i++){let a=Math.PI*2*i/points,rr=radius*(.65+Math.random()*.55);coords.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr})}let d=`M${coords[0].x} ${coords[0].y} `;for(let i=1;i<coords.length;i++)d+=`L${coords[i].x} ${coords[i].y} `;return{id,n,shape:"path",d:d+"Z",label:[cx,cy]}}
+function generatePrincess(type,pose,scene,difficulty){
+  const seed=Date.now();
+  const colorCount=difficulty==="easy"?10:difficulty==="medium"?14:16;
+  const colors=shuffle([...palettes[type]]).slice(0,colorCount);
+  const detail=difficulty==="easy"?18:difficulty==="medium"?34:62;
+  let regions=[
+    ...background(scene),
+    ...bodyAndDress(type,pose),
+    ...headFaceHair(type,pose),
+    ...dressLayers(type,pose,difficulty),
+    ...accessories(type,pose),
+    ...organicDetails(detail,type,scene)
+  ];
+  regions=regions.map((r,i)=>({...r,id:`${r.id}-${i}`,n:norm(r.n,colorCount)}));
+  return {id:`princess-${type}-${seed}`,title:titleFor(type)+" #"+String(seed).slice(-4),category:"Princess",princessType:type,poseType:pose,sceneType:scene,difficulty:titleCase(difficulty),difficultyKey:difficulty,colors,viewBox:"0 0 420 520",regions};
+}
+
+function background(scene){
+  let r=[{id:"bg",n:1,shape:"rect",attrs:{x:0,y:0,width:420,height:520},label:[45,45]}];
+  if(scene==="castle"){
+    r.push({id:"sky",n:2,shape:"path",d:"M0 0 H420 V245 C350 205 300 210 245 242 C170 285 90 220 0 265 Z",label:[80,110]});
+    r.push({id:"castle",n:3,shape:"path",d:"M42 520 V300 H75 V235 H112 V300 H152 V210 H195 V300 H230 V250 H265 V300 H306 V225 H342 V300 H380 V520 Z",label:[210,390]});
+    r.push({id:"roofA",n:4,shape:"path",d:"M85 235 L113 160 L142 235 Z",label:[113,210]});
+    r.push({id:"roofB",n:4,shape:"path",d:"M170 210 L195 135 L220 210 Z",label:[195,185]});
+    r.push({id:"moon",n:5,shape:"circle",attrs:{cx:336,cy:88,r:42},label:[336,88]});
+  }
+  if(scene==="garden"){
+    r.push({id:"gardenSky",n:2,shape:"path",d:"M0 0 H420 V275 C330 215 270 270 220 240 C150 200 88 270 0 230 Z",label:[90,95]});
+    r.push({id:"grass",n:3,shape:"path",d:"M0 280 C90 245 155 310 245 260 C315 225 360 275 420 250 V520 H0 Z",label:[210,410]});
+    for(let i=0;i<16;i++){let x=rand(20,400),y=rand(320,500),s=rand(8,20);r.push({id:`gardenPetal${i}`,n:4+i%7,shape:"circle",attrs:{cx:x,cy:y,r:s},label:[x,y]})}
+  }
+  if(scene==="forest"){
+    r.push({id:"forestSky",n:2,shape:"path",d:"M0 0 H420 V300 C330 235 260 285 190 255 C115 220 65 280 0 260 Z",label:[80,95]});
+    for(let i=0;i<7;i++){let x=20+i*64+rand(-10,12);r.push({id:`trunk${i}`,n:3+i%3,shape:"path",d:`M${x} 520 L${x+22} 245 L${x+45} 520 Z`,label:[x+22,405]});r.push({id:`leaf${i}`,n:6+i%5,shape:"circle",attrs:{cx:x+23,cy:230+rand(-25,20),r:58+rand(-12,16)},label:[x+23,230]})}
+  }
+  if(scene==="stars"){
+    r.push({id:"halo",n:2,shape:"circle",attrs:{cx:210,cy:190,r:185},label:[210,115]});
+    for(let i=0;i<24;i++){let x=rand(24,396),y=rand(25,260),s=rand(6,17);r.push({id:`star${i}`,n:3+i%7,shape:"path",d:starPath(x,y,s),label:[x,y]})}
+  }
+  if(scene==="ocean"){
+    r.push({id:"sunset",n:2,shape:"circle",attrs:{cx:330,cy:100,r:52},label:[330,100]});
+    r.push({id:"water",n:3,shape:"path",d:"M0 265 C80 225 135 295 205 250 C285 205 340 285 420 240 V520 H0 Z",label:[210,405]});
+    r.push({id:"wave",n:4,shape:"path",d:"M0 335 C100 300 135 370 220 325 C300 285 345 355 420 315 V390 C330 360 285 405 205 375 C120 340 75 390 0 355 Z",label:[210,350]});
+  }
+  return r;
+}
+
+function bodyAndDress(type,pose){
+  let r=[];
+  const cx=pose==="threequarter"?218:210;
+  r.push({id:"neck",n:6,shape:"path",d:`M${cx-32} 258 C${cx-18} 292 ${cx+18} 292 ${cx+32} 258 L${cx+45} 335 H${cx-45} Z`,label:[cx,300]});
+  r.push({id:"shoulders",n:10,shape:"path",d:`M${cx-112} 355 C${cx-65} 315 ${cx+65} 315 ${cx+112} 355 L${cx+145} 520 H${cx-145} Z`,label:[cx,405]});
+  if(pose==="dancing"){
+    r.push({id:"dressMain",n:11,shape:"path",d:`M${cx-55} 325 C${cx-145} 365 ${cx-178} 450 ${cx-198} 520 H${cx+198} C${cx+175} 445 ${cx+142} 365 ${cx+55} 325 C${cx+25} 345 ${cx-25} 345 ${cx-55} 325 Z`,label:[cx,455]});
+  }else{
+    r.push({id:"dressMain",n:11,shape:"path",d:`M${cx-62} 325 C${cx-108} 380 ${cx-138} 455 ${cx-156} 520 H${cx+156} C${cx+138} 455 ${cx+108} 380 ${cx+62} 325 C${cx+25} 350 ${cx-25} 350 ${cx-62} 325 Z`,label:[cx,455]});
+  }
+  r.push({id:"waist",n:8,shape:"rect",attrs:{x:cx-70,y:332,width:140,height:26},label:[cx,345]});
+  return r;
+}
+
+function headFaceHair(type,pose){
+  let r=[];
+  const cx=pose==="threequarter"?218:210;
+  const faceRx=pose==="threequarter"?76:82;
+  r.push({id:"hairBack",n:7,shape:"path",d:`M${cx-104} 190 C${cx-128} 64 ${cx+130} 44 ${cx+112} 210 C${cx+92} 126 ${cx+48} 78 ${cx} 78 C${cx-55} 78 ${cx-96} 120 ${cx-104} 190 Z`,label:[cx,82]});
+  r.push({id:"hairSideL",n:7,shape:"path",d:`M${cx-92} 140 C${cx-150} 190 ${cx-120} 292 ${cx-72} 330 C${cx-95} 250 ${cx-72} 175 ${cx-35} 105 Z`,label:[cx-92,230]});
+  r.push({id:"hairSideR",n:9,shape:"path",d:`M${cx+75} 130 C${cx+140} 180 ${cx+122} 292 ${cx+70} 340 C${cx+102} 250 ${cx+75} 175 ${cx+30} 102 Z`,label:[cx+88,230]});
+  r.push({id:"face",n:6,shape:"ellipse",attrs:{cx:cx,cy:178,rx:faceRx,ry:100,rot:pose==="threequarter"?-4:0},label:[cx,178]});
+  r.push({id:"bangs",n:7,shape:"path",d:`M${cx-78} 130 C${cx-40} 70 ${cx+45} 70 ${cx+88} 128 C${cx+35} 112 ${cx-5} 118 ${cx-42} 146 C${cx-55} 134 ${cx-68} 130 ${cx-78} 130 Z`,label:[cx,112]});
+  r.push({id:"hairHighlight1",n:14,shape:"path",d:`M${cx-50} 95 C${cx-70} 155 ${cx-65} 225 ${cx-30} 295 C${cx-42} 220 ${cx-35} 150 ${cx-8} 92 Z`,label:[cx-43,190]});
+  r.push({id:"hairHighlight2",n:15,shape:"path",d:`M${cx+38} 98 C${cx+72} 165 ${cx+76} 230 ${cx+45} 303 C${cx+60} 225 ${cx+50} 160 ${cx+18} 98 Z`,label:[cx+54,190]});
+  // Eyes: whites, iris, pupils, highlights, lids
+  r.push({id:"eyeWhiteL",n:12,shape:"ellipse",attrs:{cx:cx-33,cy:166,rx:25,ry:18,rot:-5},label:[cx-33,166]});
+  r.push({id:"eyeWhiteR",n:12,shape:"ellipse",attrs:{cx:cx+34,cy:166,rx:25,ry:18,rot:5},label:[cx+34,166]});
+  r.push({id:"irisL",n:4,shape:"circle",attrs:{cx:cx-30,cy:167,r:11},label:[cx-30,167]});
+  r.push({id:"irisR",n:4,shape:"circle",attrs:{cx:cx+31,cy:167,r:11},label:[cx+31,167]});
+  r.push({id:"pupilL",n:1,shape:"circle",attrs:{cx:cx-29,cy:168,r:6},label:[cx-29,168]});
+  r.push({id:"pupilR",n:1,shape:"circle",attrs:{cx:cx+30,cy:168,r:6},label:[cx+30,168]});
+  r.push({id:"eyeSparkL",n:13,shape:"circle",attrs:{cx:cx-25,cy:162,r:3},label:[cx-25,162]});
+  r.push({id:"eyeSparkR",n:13,shape:"circle",attrs:{cx:cx+35,cy:162,r:3},label:[cx+35,162]});
+  r.push({id:"lidL",n:2,shape:"path",d:`M${cx-58} 154 C${cx-40} 142 ${cx-18} 145 ${cx-8} 157`,label:[cx-33,151]});
+  r.push({id:"lidR",n:2,shape:"path",d:`M${cx+8} 157 C${cx+22} 144 ${cx+45} 142 ${cx+58} 154`,label:[cx+33,151]});
+  r.push({id:"nose",n:6,shape:"path",d:`M${cx+2} 178 L${cx-10} 218 L${cx+16} 218 Z`,label:[cx+3,205]});
+  r.push({id:"mouth",n:5,shape:"path",d:`M${cx-32} 236 C${cx-10} 258 ${cx+18} 258 ${cx+42} 236 C${cx+25} 272 ${cx-16} 272 ${cx-32} 236 Z`,label:[cx+4,252]});
+  r.push({id:"cheekL",n:5,shape:"ellipse",attrs:{cx:cx-58,cy:220,rx:18,ry:10,rot:-8},label:[cx-58,220]});
+  r.push({id:"cheekR",n:5,shape:"ellipse",attrs:{cx:cx+62,cy:220,rx:18,ry:10,rot:8},label:[cx+62,220]});
+  return r;
+}
+
+function dressLayers(type,pose,difficulty){
+  let r=[];
+  const cx=pose==="threequarter"?218:210;
+  r.push({id:"dressPanelCenter",n:12,shape:"path",d:`M${cx-35} 360 C${cx-48} 410 ${cx-58} 470 ${cx-65} 520 H${cx+65} C${cx+58} 470 ${cx+48} 410 ${cx+35} 360 Z`,label:[cx,450]});
+  r.push({id:"dressPanelL",n:13,shape:"path",d:`M${cx-70} 365 C${cx-115} 415 ${cx-135} 475 ${cx-150} 520 H${cx-65} C${cx-60} 470 ${cx-48} 410 ${cx-35} 360 Z`,label:[cx-92,450]});
+  r.push({id:"dressPanelR",n:14,shape:"path",d:`M${cx+70} 365 C${cx+115} 415 ${cx+135} 475 ${cx+150} 520 H${cx+65} C${cx+60} 470 ${cx+48} 410 ${cx+35} 360 Z`,label:[cx+92,450]});
+  r.push({id:"bodice",n:8,shape:"path",d:`M${cx-55} 302 C${cx-22} 325 ${cx+22} 325 ${cx+55} 302 L${cx+42} 356 H${cx-42} Z`,label:[cx,333]});
+  r.push({id:"necklace",n:9,shape:"path",d:`M${cx-40} 286 C${cx-15} 304 ${cx+15} 304 ${cx+40} 286 L${cx+28} 300 C${cx+8} 318 ${cx-8} 318 ${cx-28} 300 Z`,label:[cx,304]});
+  const count=difficulty==="hard"?18:10;
+  for(let i=0;i<count;i++){
+    let x=rand(cx-135,cx+135),y=rand(370,510);
+    r.push({id:`dressGem${i}`,n:4+i%10,shape:i%2?"circle":"ellipse",attrs:i%2?{cx:x,cy:y,r:rand(5,10)}:{cx:x,cy:y,rx:rand(6,13),ry:rand(4,10),rot:rand(0,160)},label:[x,y]});
+  }
+  return r;
+}
+
+function accessories(type,pose){
+  let r=[];
+  const cx=pose==="threequarter"?218:210;
+  if(type==="royal"||type==="star"){
+    r.push({id:"crownBase",n:9,shape:"path",d:`M${cx-62} 100 L${cx-35} 50 L${cx} 92 L${cx+35} 50 L${cx+62} 100 Z`,label:[cx,82]});
+    r.push({id:"crownGem",n:5,shape:"circle",attrs:{cx:cx,cy:82,r:9},label:[cx,82]});
+  }
+  if(type==="forest"){
+    r.push({id:"leafTiara",n:9,shape:"path",d:`M${cx-70} 108 C${cx-35} 75 ${cx+35} 75 ${cx+70} 108 C${cx+25} 96 ${cx-25} 96 ${cx-70} 108 Z`,label:[cx,98]});
+    for(let i=0;i<6;i++){let x=cx-52+i*20,y=95+rand(-6,8);r.push({id:`leafGem${i}`,n:3+i%4,shape:"ellipse",attrs:{cx:x,cy:y,rx:11,ry:6,rot:rand(-40,40)},label:[x,y]})}
+  }
+  if(type==="sea"){
+    r.push({id:"shellCrown",n:9,shape:"path",d:`M${cx-45} 103 C${cx-25} 65 ${cx+25} 65 ${cx+45} 103 C${cx+15} 90 ${cx-15} 90 ${cx-45} 103 Z`,label:[cx,90]});
+  }
+  if(type==="snow"){
+    r.push({id:"iceCrown",n:9,shape:"path",d:`M${cx-65} 105 L${cx-42} 70 L${cx-18} 104 L${cx} 60 L${cx+18} 104 L${cx+42} 70 L${cx+65} 105 Z`,label:[cx,89]});
+  }
+  if(type==="rose"){
+    for(let i=0;i<5;i++){let x=cx-45+i*22,y=93+rand(-8,6);r.push({id:`roseCrown${i}`,n:5+i%4,shape:"circle",attrs:{cx:x,cy:y,r:12},label:[x,y]})}
+  }
+  return r;
+}
+
+function organicDetails(count,type,scene){
+  let r=[];
+  for(let i=0;i<count;i++){
+    let zone=Math.random(),x,y,size;
+    if(zone<.25){x=rand(25,395);y=rand(30,230);size=rand(7,24)}
+    else if(zone<.58){x=rand(80,340);y=rand(320,515);size=rand(7,28)}
+    else{x=rand(25,395);y=rand(230,515);size=rand(8,32)}
+    let kind=Math.random();
+    if(kind<.34)r.push(blob(`blob${i}`,x,y,size,5+i%5,4+i%12));
+    else if(kind<.68)r.push({id:`ellipseDetail${i}`,n:3+i%13,shape:"ellipse",attrs:{cx:x,cy:y,rx:size,ry:Math.max(5,size*rand(40,95)/100),rot:rand(0,180)},label:[x,y]});
+    else r.push({id:`spark${i}`,n:5+i%11,shape:"path",d:starPath(x,y,size),label:[x,y]});
+  }
+  return r;
+}
+
+function blob(id,cx,cy,radius,points,n){
+  let coords=[];
+  for(let i=0;i<points;i++){let a=Math.PI*2*i/points,rr=radius*(.62+Math.random()*.55);coords.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr})}
+  let d=`M${coords[0].x} ${coords[0].y} `;
+  for(let i=1;i<coords.length;i++)d+=`L${coords[i].x} ${coords[i].y} `;
+  return{id,n,shape:"path",d:d+"Z",label:[cx,cy]}
+}
+
 function starPath(x,y,s){return`M${x} ${y-s} L${x+s*.32} ${y-s*.32} L${x+s} ${y} L${x+s*.32} ${y+s*.32} L${x} ${y+s} L${x-s*.32} ${y+s*.32} L${x-s} ${y} L${x-s*.32} ${y-s*.32} Z`}
 
-function startTemplate(t){state.currentTemplate=t;state.selectedColor=1;state.undoStack=[];state.zoom=1;state.pan={x:0,y:0};let saved=JSON.parse(localStorage.getItem(saveKey(t.id))||"null");state.completed=new Set(saved?.completed||[]);$("artTitle").textContent=t.title;$("artMeta").textContent=`${t.characterType} · ${t.sceneType} · ${t.difficulty} · ${t.colors.length} colors · ${t.regions.length} regions`;$("studioView").classList.remove("active");$("paintView").classList.add("active");$("studioBtn").classList.remove("hidden");renderCanvas();renderPalette();updateProgress();applyTransform()}
-function renderCanvas(){let t=state.currentTemplate;$("canvasInner").innerHTML=`<svg class="paint-svg" viewBox="${t.viewBox}">${t.regions.map(r=>{let done=state.completed.has(r.id),fill=done?t.colors[(r.n-1)%t.colors.length]:"#faf8f3";return shapeMarkup(r,fill,true,done)}).join("")}${t.regions.filter(r=>!state.completed.has(r.id)).map(r=>`<text class="region-label" x="${r.label[0]}" y="${r.label[1]}">${r.n}</text>`).join("")}</svg>`;$("canvasInner").querySelectorAll(".region").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();paintRegion(el.dataset.id)}))}
-function shapeMarkup(r,fill,interactive=true,done=false){let common=interactive?`class="region ${done?"filled":"unfilled"}" data-id="${r.id}" data-n="${r.n}" fill="${fill}"`:`fill="${fill}" stroke="#fff" stroke-width="1.7"`;if(r.shape==="path")return`<path ${common} d="${r.d}" />`;if(r.shape==="circle")return`<circle ${common} cx="${r.attrs.cx}" cy="${r.attrs.cy}" r="${r.attrs.r}" />`;if(r.shape==="rect")return`<rect ${common} x="${r.attrs.x}" y="${r.attrs.y}" width="${r.attrs.width}" height="${r.attrs.height}" />`;if(r.shape==="ellipse")return`<ellipse ${common} cx="${r.attrs.cx}" cy="${r.attrs.cy}" rx="${r.attrs.rx}" ry="${r.attrs.ry}" transform="rotate(${r.attrs.rot||0} ${r.attrs.cx} ${r.attrs.cy})" />`;return""}
-function renderPalette(){let t=state.currentTemplate;$("palette").innerHTML=t.colors.map((color,idx)=>{let n=idx+1,total=t.regions.filter(r=>r.n===n).length,done=t.regions.filter(r=>r.n===n&&state.completed.has(r.id)).length;return`<button class="swatch ${state.selectedColor===n?"active":""} ${total&&done===total?"done":""}" data-n="${n}"><div class="color-dot" style="background:${color}"></div><strong>#${n}</strong><span>${done}/${total}</span></button>`}).join("");$("palette").querySelectorAll(".swatch").forEach(btn=>btn.addEventListener("click",()=>{state.selectedColor=Number(btn.dataset.n);renderPalette()}))}
-function paintRegion(id){let t=state.currentTemplate,r=t.regions.find(x=>x.id===id);if(!r||state.completed.has(id))return;if(r.n!==state.selectedColor){let el=$("canvasInner").querySelector(`[data-id="${id}"]`);el.classList.add("wrong");showToast(`That area needs color #${r.n}`);setTimeout(()=>{el.classList.remove("wrong");el.setAttribute("fill","#faf8f3")},300);return}state.completed.add(id);state.undoStack.push(id);saveProgress();renderCanvas();renderPalette();updateProgress();if(state.completed.size===t.regions.length){localStorage.removeItem(saveKey(t.id));$("completeModal").classList.remove("hidden")}}
+function startTemplate(t){
+  state.currentTemplate=t;state.selectedColor=1;state.undoStack=[];state.zoom=1;state.pan={x:0,y:0};
+  let saved=JSON.parse(localStorage.getItem(saveKey(t.id))||"null");
+  state.completed=new Set(saved?.completed||[]);
+  $("artTitle").textContent=t.title;
+  $("artMeta").textContent=`${t.princessType} · ${t.poseType} · ${t.sceneType} · ${t.difficulty} · ${t.colors.length} colors · ${t.regions.length} regions`;
+  $("studioView").classList.remove("active");$("paintView").classList.add("active");$("studioBtn").classList.remove("hidden");
+  renderCanvas();renderPalette();updateProgress();applyTransform();
+}
+
+function renderCanvas(){
+  let t=state.currentTemplate;
+  $("canvasInner").innerHTML=`<svg class="paint-svg" viewBox="${t.viewBox}">${t.regions.map(r=>{let done=state.completed.has(r.id),fill=done?t.colors[(r.n-1)%t.colors.length]:"#fffaf4";return shapeMarkup(r,fill,true,done)}).join("")}${t.regions.filter(r=>!state.completed.has(r.id)).map(r=>`<text class="region-label" x="${r.label[0]}" y="${r.label[1]}">${r.n}</text>`).join("")}</svg>`;
+  $("canvasInner").querySelectorAll(".region").forEach(el=>el.addEventListener("click",e=>{e.stopPropagation();paintRegion(el.dataset.id)}));
+}
+
+function shapeMarkup(r,fill,interactive=true,done=false){
+  let common=interactive?`class="region ${done?"filled":"unfilled"}" data-id="${r.id}" data-n="${r.n}" fill="${fill}"`:`fill="${fill}" stroke="#fff" stroke-width="1.6"`;
+  if(r.shape==="path")return`<path ${common} d="${r.d}" />`;
+  if(r.shape==="circle")return`<circle ${common} cx="${r.attrs.cx}" cy="${r.attrs.cy}" r="${r.attrs.r}" />`;
+  if(r.shape==="rect")return`<rect ${common} x="${r.attrs.x}" y="${r.attrs.y}" width="${r.attrs.width}" height="${r.attrs.height}" />`;
+  if(r.shape==="ellipse")return`<ellipse ${common} cx="${r.attrs.cx}" cy="${r.attrs.cy}" rx="${r.attrs.rx}" ry="${r.attrs.ry}" transform="rotate(${r.attrs.rot||0} ${r.attrs.cx} ${r.attrs.cy})" />`;
+  return"";
+}
+
+function renderPalette(){
+  let t=state.currentTemplate;
+  $("palette").innerHTML=t.colors.map((color,idx)=>{
+    let n=idx+1,total=t.regions.filter(r=>r.n===n).length,done=t.regions.filter(r=>r.n===n&&state.completed.has(r.id)).length;
+    return`<button class="swatch ${state.selectedColor===n?"active":""} ${total&&done===total?"done":""}" data-n="${n}"><div class="color-dot" style="background:${color}"></div><strong>#${n}</strong><span>${done}/${total}</span></button>`
+  }).join("");
+  $("palette").querySelectorAll(".swatch").forEach(btn=>btn.addEventListener("click",()=>{state.selectedColor=Number(btn.dataset.n);renderPalette()}));
+}
+
+function paintRegion(id){
+  let t=state.currentTemplate,r=t.regions.find(x=>x.id===id);
+  if(!r||state.completed.has(id))return;
+  if(r.n!==state.selectedColor){
+    let el=$("canvasInner").querySelector(`[data-id="${id}"]`);
+    el.classList.add("wrong");showToast(`That area needs color #${r.n}`);
+    setTimeout(()=>{el.classList.remove("wrong");el.setAttribute("fill","#fffaf4")},300);
+    return;
+  }
+  state.completed.add(id);state.undoStack.push(id);saveProgress();renderCanvas();renderPalette();updateProgress();
+  if(state.completed.size===t.regions.length){localStorage.removeItem(saveKey(t.id));$("completeModal").classList.remove("hidden")}
+}
+
 function updateProgress(){let total=state.currentTemplate.regions.length,done=state.completed.size,pct=Math.round(done/total*100);$("progressText").textContent=`${pct}%`;$("progressBar").style.width=`${pct}%`}
 function showHint(){let target=state.currentTemplate.regions.find(r=>r.n===state.selectedColor&&!state.completed.has(r.id));if(!target)return showToast("No unfinished areas for this color.");let el=$("canvasInner").querySelector(`[data-id="${target.id}"]`);el.classList.add("hint");setTimeout(()=>el.classList.remove("hint"),2300)}
 function undo(){let last=state.undoStack.pop();if(!last)return showToast("Nothing to undo.");state.completed.delete(last);saveProgress();renderCanvas();renderPalette();updateProgress()}
 function resetCurrent(){if(!state.currentTemplate)return;state.completed.clear();state.undoStack=[];saveProgress();renderCanvas();renderPalette();updateProgress();showToast("Painting reset.")}
 function saveProgress(){let t=state.currentTemplate;localStorage.setItem(saveKey(t.id),JSON.stringify({completed:[...state.completed]}))}
-function saveKey(id){return`storybookPaint:save:${id}`}
-function saveGenerated(t){savedArtworks.unshift(t);savedArtworks=savedArtworks.slice(0,9);localStorage.setItem("storybookPaint:saved",JSON.stringify(savedArtworks));renderSavedGrid()}
-function renderSavedGrid(){let grid=$("savedGrid");if(!savedArtworks.length){grid.innerHTML=`<p class="empty">No generated characters yet.</p>`;return}grid.innerHTML=savedArtworks.map(t=>`<article class="template-card" data-id="${t.id}">${thumbnailSVG(t)}<div class="template-info"><h4>${t.title}</h4><p>${t.characterType} · ${t.sceneType} · ${t.colors.length} colors</p></div></article>`).join("");grid.querySelectorAll(".template-card").forEach(card=>card.addEventListener("click",()=>{let t=savedArtworks.find(x=>x.id===card.dataset.id);if(t)startTemplate(t)}))}
+function saveKey(id){return`princessPaint:v2save:${id}`}
+function saveGenerated(t){savedArtworks.unshift(t);savedArtworks=savedArtworks.slice(0,9);localStorage.setItem("princessPaint:v2saved",JSON.stringify(savedArtworks));renderSavedGrid()}
+function renderSavedGrid(){
+  let grid=$("savedGrid");
+  if(!savedArtworks.length){grid.innerHTML=`<p class="empty">No generated princesses yet.</p>`;return}
+  grid.innerHTML=savedArtworks.map(t=>`<article class="template-card" data-id="${t.id}">${thumbnailSVG(t)}<div class="template-info"><h4>${t.title}</h4><p>${t.princessType} · ${t.sceneType} · ${t.colors.length} colors</p></div></article>`).join("");
+  grid.querySelectorAll(".template-card").forEach(card=>card.addEventListener("click",()=>{let t=savedArtworks.find(x=>x.id===card.dataset.id);if(t)startTemplate(t)}));
+}
 function thumbnailSVG(t){return`<svg viewBox="${t.viewBox}" aria-hidden="true">${t.regions.map(r=>shapeMarkup(r,t.colors[(r.n-1)%t.colors.length],false)).join("")}</svg>`}
-function setZoom(v){state.zoom=Math.max(.65,Math.min(2.5,v));applyTransform()}
+function setZoom(v){state.zoom=Math.max(.65,Math.min(2.7,v));applyTransform()}
 function applyTransform(){$("canvasInner").style.transform=`translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`}
 function showStudio(){$("paintView").classList.remove("active");$("studioView").classList.add("active");$("studioBtn").classList.add("hidden");$("completeModal").classList.add("hidden");renderSavedGrid()}
 function showToast(m){let t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1400)}
@@ -90,31 +271,6 @@ function norm(n,c){return((n-1)%c)+1}
 function rand(min,max){return Math.round(min+Math.random()*(max-min))}
 function shuffle(a){return a.sort(()=>Math.random()-.5)}
 function titleCase(s){return s.charAt(0).toUpperCase()+s.slice(1)}
-function titleFor(type){return{princess:"Enchanted Princess",animal:"Talking Animal Friend",fairy:"Forest Fairy",hero:"Brave Young Hero",sea:"Sea Princess",snow:"Snow Queen",beast:"Gentle Beast",villain:"Stylish Villain"}[type]||"Storybook Character"}
-
-
-window.generateFromControls = generateFromControls;
-window.generateFromCurrentStyle = generateFromCurrentStyle;
-
-function safeInit(){
-  try{
-    init();
-    const btn = document.getElementById("generateBtn");
-    if(btn){
-      btn.onclick = generateFromControls;
-      btn.addEventListener("touchend", function(e){
-        e.preventDefault();
-        generateFromControls();
-      }, {passive:false});
-    }
-  }catch(e){
-    alert("App startup error: " + e.message);
-    console.error(e);
-  }
-}
-
-if(document.readyState === "loading"){
-  document.addEventListener("DOMContentLoaded", safeInit);
-}else{
-  safeInit();
-}
+function titleFor(type){return{royal:"Royal Ball Princess",forest:"Forest Princess",sea:"Sea Princess",snow:"Snow Princess",rose:"Rose Garden Princess",star:"Star Princess"}[type]||"Princess"}
+window.generateFromControls=generateFromControls;
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
