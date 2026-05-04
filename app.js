@@ -1,4 +1,9 @@
-let savedArtworks=JSON.parse(localStorage.getItem("storybookPaint:saved")||"[]");
+let savedArtworks=[];
+try{
+  savedArtworks=JSON.parse(localStorage.getItem("storybookPaint:saved")||"[]");
+}catch(e){
+  savedArtworks=[];
+}
 let state={currentTemplate:null,selectedColor:1,completed:new Set(),undoStack:[],zoom:1,pan:{x:0,y:0},dragging:false,lastPoint:null};
 const $=id=>document.getElementById(id);
 const palettes={
@@ -86,4 +91,30 @@ function rand(min,max){return Math.round(min+Math.random()*(max-min))}
 function shuffle(a){return a.sort(()=>Math.random()-.5)}
 function titleCase(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function titleFor(type){return{princess:"Enchanted Princess",animal:"Talking Animal Friend",fairy:"Forest Fairy",hero:"Brave Young Hero",sea:"Sea Princess",snow:"Snow Queen",beast:"Gentle Beast",villain:"Stylish Villain"}[type]||"Storybook Character"}
-init();
+
+
+window.generateFromControls = generateFromControls;
+window.generateFromCurrentStyle = generateFromCurrentStyle;
+
+function safeInit(){
+  try{
+    init();
+    const btn = document.getElementById("generateBtn");
+    if(btn){
+      btn.onclick = generateFromControls;
+      btn.addEventListener("touchend", function(e){
+        e.preventDefault();
+        generateFromControls();
+      }, {passive:false});
+    }
+  }catch(e){
+    alert("App startup error: " + e.message);
+    console.error(e);
+  }
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", safeInit);
+}else{
+  safeInit();
+}

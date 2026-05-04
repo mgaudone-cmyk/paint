@@ -21,3 +21,14 @@ This app does not copy protected characters. It generates original character arc
 ## GitHub Pages
 
 Upload `index.html`, `style.css`, and `app.js` to the root of your repo, then enable GitHub Pages from Settings > Pages.
+
+
+## If GitHub Pages still shows the old version
+
+On iPhone Safari:
+1. Open the app URL
+2. Pull down to refresh
+3. If needed, add `?v=2` to the end of the URL
+
+Example:
+https://YOUR-USERNAME.github.io/YOUR-REPO/?v=2
