@@ -18,7 +18,7 @@ function init(){
   $("imageUpload").addEventListener("change", handleUpload);
   
 ["cropZoom","cropX","cropY"].forEach(id => $(id).addEventListener("input", ()=>{drawCropPreview(); invalidatePreview();}));
-["colorCount","imageMode","regionSize"].forEach(id => $(id).addEventListener("change", invalidatePreview));
+["colorCount","imageMode","regionSize","qualityLevel"].forEach(id => $(id).addEventListener("change", invalidatePreview));
 
   
 $("previewBtn").addEventListener("click", previewConversion);
@@ -144,13 +144,22 @@ function commitConversion(){
 }
 
 function buildTemplate(colorCount, mode, regionSize){
-  const grid = mode === "lineart" ? 90 : 70;
+  const quality = $("qualityLevel").value;
+  const grid = getGridSize(mode, quality);
+
   const work = document.createElement("canvas");
   drawCroppedToCanvas(work, grid);
   const ctx = work.getContext("2d", {willReadFrequently:true});
+
   let img = ctx.getImageData(0,0,grid,grid);
-  if(mode === "photo"){
-    img = smoothImageData(img, grid, grid, 1);
+
+  // Higher-quality pre-processing: smooth texture but retain broad forms.
+  const passes = mode === "lineart" ? 0 : mode === "anime" ? 1 : 2;
+  if(passes > 0) img = smoothImageData(img, grid, grid, passes);
+
+  // Remove subtitle-like bands near bottom for screenshots when detected.
+  if(mode === "anime") {
+    img = softenSubtitleBand(img, grid, grid);
   }
 
   const lineMask = new Uint8Array(grid*grid);
@@ -164,7 +173,14 @@ function buildTemplate(colorCount, mode, regionSize){
       const r=img.data[i], g=img.data[i+1], b=img.data[i+2];
       const lum = 0.299*r+0.587*g+0.114*b;
       const max=Math.max(r,g,b), min=Math.min(r,g,b);
-      const isLine = lum < (mode==="lineart"?95:65) && (max-min < 95 || lum < 55);
+      const sat = max-min;
+
+      // For clean cartoon/anime art, black outlines are preserved separately.
+      let isLine = false;
+      if(mode === "lineart") isLine = lum < 115 && sat < 130;
+      else if(mode === "anime") isLine = lum < 75;
+      else isLine = lum < 55;
+
       if(isLine){
         lineMask[y*grid+x]=1;
       }else{
@@ -174,7 +190,7 @@ function buildTemplate(colorCount, mode, regionSize){
     }
   }
 
-  const centers = smartPalette(pixels, colorCount);
+  const centers = smartPaletteHQ(pixels, colorCount, mode);
   const labels = new Int16Array(grid*grid);
   labels.fill(-1);
 
@@ -187,10 +203,13 @@ function buildTemplate(colorCount, mode, regionSize){
     }
   }
 
-  denoiseLabels(labels, lineMask, grid, grid, mode==="lineart"?2:1);
+  // More denoising, but at higher resolution, so shapes remain more accurate.
+  const denoisePasses = mode === "lineart" ? 1 : mode === "anime" ? 2 : 3;
+  denoiseLabels(labels, lineMask, grid, grid, denoisePasses);
 
   let regions = floodFillRegions(labels, lineMask, grid, grid);
-  regions = filterRegions(regions, regionSize);
+  regions = filterRegions(regions, regionSize, grid, mode);
+
   const regionMap = new Int32Array(grid*grid);
   regionMap.fill(-1);
   regions.forEach((reg, id) => reg.cells.forEach(([x,y]) => regionMap[y*grid+x] = id));
@@ -201,28 +220,77 @@ function buildTemplate(colorCount, mode, regionSize){
     colors:centers.map(rgbToHex),
     lineMask,
     regions,
-    regionMap
+    regionMap,
+    sourceMode: mode,
+    quality
   };
 }
 
-function smartPalette(pixels,k){
+function getGridSize(mode, quality){
+  if(quality === "fast") return mode === "photo" ? 90 : 120;
+  if(quality === "hq") return mode === "photo" ? 130 : 170;
+  return mode === "photo" ? 160 : 220;
+}
+
+function softenSubtitleBand(img,w,h){
+  // Detect and soften high-contrast subtitle/text zones in the lower third.
+  const out = new ImageData(new Uint8ClampedArray(img.data), w, h);
+  const startY = Math.floor(h*0.62);
+  for(let y=startY;y<h;y++){
+    for(let x=0;x<w;x++){
+      const i=(y*w+x)*4;
+      const r=img.data[i], g=img.data[i+1], b=img.data[i+2];
+      const lum=0.299*r+0.587*g+0.114*b;
+      const max=Math.max(r,g,b), min=Math.min(r,g,b);
+      // Subtitles often have strong dark or light outlines that become ugly paint regions.
+      if((lum < 45 || lum > 235) && (max-min < 70)){
+        const avg = localAverage(img,w,h,x,y,3);
+        out.data[i]=avg[0]; out.data[i+1]=avg[1]; out.data[i+2]=avg[2];
+      }
+    }
+  }
+  return out;
+}
+
+function localAverage(img,w,h,x,y,rad){
+  let s=[0,0,0], c=0;
+  for(let dy=-rad;dy<=rad;dy++){
+    for(let dx=-rad;dx<=rad;dx++){
+      const nx=x+dx, ny=y+dy;
+      if(nx<0||ny<0||nx>=w||ny>=h) continue;
+      const i=(ny*w+nx)*4;
+      s[0]+=img.data[i]; s[1]+=img.data[i+1]; s[2]+=img.data[i+2]; c++;
+    }
+  }
+  return s.map(v=>Math.round(v/c));
+}
+
+function smartPaletteHQ(pixels,k,mode){
+  const bucketSize = mode === "lineart" ? 18 : mode === "anime" ? 22 : 28;
   const buckets = new Map();
+
   pixels.forEach(p=>{
-    // keep near-white as its own bucket but prevent infinite subtle tones
-    const key = p.map(v=>Math.round(v/30)*30).join(",");
+    // ignore pure black outline-like colors and group near-whites cleanly
+    const key = p.map(v=>Math.round(v/bucketSize)*bucketSize).join(",");
     buckets.set(key,(buckets.get(key)||0)+1);
   });
+
   const sorted = [...buckets.entries()]
-    .sort((a,b)=>b[1]-a[1])
-    .map(([key,count])=>({rgb:key.split(",").map(Number),count}));
+    .map(([key,count])=>({rgb:key.split(",").map(Number),count}))
+    .sort((a,b)=>b.count-a.count);
 
   const centers = [];
+  const minDistance = mode === "lineart" ? 550 : mode === "anime" ? 700 : 1000;
+
+  // Keep background/skin/major clothing tones, but avoid selecting many near-identical blocks.
   for(const item of sorted){
     if(centers.length>=k) break;
-    if(centers.every(c=>colorDist(c,item.rgb)>900)) centers.push(item.rgb);
+    if(centers.every(c=>colorDist(c,item.rgb)>minDistance)) centers.push(item.rgb);
   }
+
   while(centers.length<k && sorted.length) centers.push(sorted[centers.length % sorted.length].rgb);
-  while(centers.length<k) centers.push([240,240,240]);
+  while(centers.length<k) centers.push([245,245,245]);
+
   return centers;
 }
 
@@ -275,9 +343,11 @@ function floodFillRegions(labels,lineMask,w,h){
   return regions;
 }
 
-function filterRegions(regions, regionSize){
-  const min = regionSize === "small" ? 4 : regionSize === "medium" ? 10 : 20;
-  const labelMin = regionSize === "small" ? 18 : regionSize === "medium" ? 28 : 40;
+function filterRegions(regions, regionSize, grid, mode){
+  // At high resolution, these thresholds remove tiny garbage without destroying forms.
+  const base = regionSize === "small" ? 10 : regionSize === "medium" ? 24 : 48;
+  const min = mode === "lineart" ? base : Math.round(base*1.25);
+  const labelMin = regionSize === "small" ? 90 : regionSize === "medium" ? 150 : 240;
 
   return regions
     .filter(r=>r.cells.length>=min)
@@ -296,7 +366,7 @@ function filterRegions(regions, regionSize){
 
 function drawSimplifiedPreview(){
   const canvas = $("previewCanvas");
-  const scale = 6;
+  const scale = Math.max(2, Math.floor(720 / template.width));
   canvas.width = template.width*scale;
   canvas.height = template.height*scale;
   const ctx = canvas.getContext("2d");
@@ -310,10 +380,11 @@ function startPainting(){
   $("paintView").classList.add("active");
   $("studioBtn").classList.remove("hidden");
   $("completeModal").classList.add("hidden");
-  $("artMeta").textContent = `${template.colors.length} colors · ${template.regions.length} usable regions · clean line-art engine`;
+  $("artMeta").textContent = `${template.colors.length} colors · ${template.regions.length} usable regions · ${template.quality} quality · ${template.sourceMode}`;
   const canvas=$("paintCanvas");
-  canvas.width=template.width*8;
-  canvas.height=template.height*8;
+  const scale=Math.max(3, Math.floor(900/template.width));
+  canvas.width=template.width*scale;
+  canvas.height=template.height*scale;
   drawPaintCanvas();
   renderPalette();
   updateProgress();
@@ -323,7 +394,7 @@ function startPainting(){
 function drawPaintCanvas(){
   if(!template) return;
   const canvas=$("paintCanvas");
-  const scale=8;
+  const scale=Math.max(3, Math.floor(900/template.width));
   canvas.width=template.width*scale;
   canvas.height=template.height*scale;
   const ctx=canvas.getContext("2d");

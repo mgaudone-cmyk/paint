@@ -21,7 +21,7 @@ Replace your files with:
 
 Open:
 
-https://mgaudone-cmyk.github.io/paint/?v=7
+https://mgaudone-cmyk.github.io/paint/?v=8
 
 
 ## V6 changes
@@ -31,3 +31,13 @@ https://mgaudone-cmyk.github.io/paint/?v=7
 - Fit, Center, and Sections navigation controls
 - 9-position quick navigation for large images
 - Settings changes invalidate the preview so users can adjust and regenerate before painting
+
+
+## V7 changes
+
+- High-resolution working canvas: 120–220 instead of coarse grid
+- Anime/screenshot mode
+- Smoother posterized preview
+- Better palette grouping
+- Subtitle/text-band softening for screenshots
+- Larger minimum label thresholds to reduce clutter
