@@ -1,16 +1,24 @@
-# Paint-by-Number Photo Engine V4
+# Paint-by-Number V5 - Clean Line-Art Engine
 
-This version improves the photo conversion workflow:
+This fixes the unusable grid problem.
 
-- Crop controls
-- Background simplification
-- Smoothing / denoising before color clustering
-- Smarter palette selection
-- Fewer tiny labels
-- Outline-first paint mode
-- Color preview toggle
+## Key changes
 
-Upload `index.html`, `style.css`, and `app.js` to GitHub.
+- No more square grid borders
+- Uses a canvas renderer instead of one SVG path per cell
+- Preserves original black outlines
+- Groups color areas into clickable regions
+- Shows labels only on large enough regions
+- Better for cartoon art, princess art, coloring pages, and simple illustrations
+
+## Upload to GitHub
+
+Replace your files with:
+
+- index.html
+- style.css
+- app.js
 
 Open:
-https://mgaudone-cmyk.github.io/paint/?v=5
+
+https://mgaudone-cmyk.github.io/paint/?v=6

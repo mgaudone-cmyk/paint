@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Paint-by-Number Photo Engine V4</title>
+<title>Paint-by-Number V5</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
 <div>
-<h1>Photo Paint Studio V4</h1>
-<p>Cleaner photo-to-paint-by-number conversion.</p>
+<h1>Paint Studio V5</h1>
+<p>Clean line-art paint-by-number engine.</p>
 </div>
 <button id="studioBtn" class="ghost-btn hidden">Studio</button>
 </header>
@@ -19,25 +19,25 @@
 <main>
 <section id="studioView" class="view active">
 <div class="hero-card">
-<h2>Convert a photo into paint-by-number</h2>
-<p>This version is optimized for real photos. Crop the subject, simplify the background, reduce texture, and generate cleaner playable regions.</p>
+<h2>Convert clean art into paint-by-number</h2>
+<p>This version is optimized for cartoon drawings, princess art, coloring pages, and simple illustrations. It preserves the original black outlines and creates clean clickable paint regions.</p>
 </div>
 
 <div class="builder-card">
-<label>Upload photo
+<label>Upload image
 <input id="imageUpload" type="file" accept="image/*" />
 </label>
 
 <label>Crop zoom
-<input id="cropZoom" type="range" min="1" max="3" step="0.05" value="1.35" />
+<input id="cropZoom" type="range" min="1" max="3" step="0.05" value="1" />
 </label>
 
 <label>Crop X
-<input id="cropX" type="range" min="-100" max="100" step="1" value="20" />
+<input id="cropX" type="range" min="-100" max="100" step="1" value="0" />
 </label>
 
 <label>Crop Y
-<input id="cropY" type="range" min="-100" max="100" step="1" value="-5" />
+<input id="cropY" type="range" min="-100" max="100" step="1" value="0" />
 </label>
 </div>
 
@@ -47,22 +47,22 @@
 <option value="8">8 colors</option>
 <option value="10" selected>10 colors</option>
 <option value="12">12 colors</option>
+<option value="16">16 colors</option>
 </select>
 </label>
 
-<label>Detail
-<select id="detailLevel">
-<option value="simple">Simple</option>
-<option value="balanced" selected>Balanced</option>
-<option value="detailed">Detailed</option>
+<label>Mode
+<select id="imageMode">
+<option value="lineart" selected>Clean cartoon / line art</option>
+<option value="photo">Photo / complex image</option>
 </select>
 </label>
 
-<label>Background
-<select id="bgMode">
-<option value="simplify" selected>Simplify background</option>
-<option value="keep">Keep background</option>
-<option value="plain">Plain background</option>
+<label>Minimum region size
+<select id="regionSize">
+<option value="small">Small</option>
+<option value="medium" selected>Medium</option>
+<option value="large">Large</option>
 </select>
 </label>
 
@@ -81,8 +81,8 @@
 </div>
 
 <div class="note-card">
-<h3>Recommended for your dog photo</h3>
-<p>Use crop zoom around 1.5–2.0, move Crop X to the right, and use “Simplify background.” The goal is to make the dog larger and reduce couch texture before conversion.</p>
+<h3>What changed in V5</h3>
+<p>No more square grid. The black outline from the original image is preserved. The paint areas are grouped as clean regions, and numbers are shown only when the area is large enough.</p>
 </div>
 </section>
 
@@ -108,7 +108,9 @@
 </div>
 
 <div id="canvasStage" class="canvas-stage">
-<div id="canvasInner" class="canvas-inner"></div>
+<div id="canvasInner" class="canvas-inner">
+<canvas id="paintCanvas"></canvas>
+</div>
 </div>
 
 <div id="palette" class="palette"></div>
@@ -126,6 +128,6 @@
 </div>
 </div>
 
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
