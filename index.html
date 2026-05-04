@@ -1,108 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Princess Paint Studio</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Princess Paint Studio V3</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="app-shell">
-<header class="topbar">
-<div>
-<h1>Princess Paint Studio</h1>
-<p>Original fairy-tale princess paint-by-number art.</p>
-</div>
-<button id="studioBtn" class="ghost-btn hidden">Studio</button>
-</header>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <h1>Princess Paint Studio V3</h1>
+        <p>Image-based paint-by-number converter.</p>
+      </div>
+      <button id="studioBtn" class="ghost-btn hidden">Studio</button>
+    </header>
 
-<main>
-<section id="studioView" class="view active">
-<div class="hero-card">
-<h2>Create a princess painting</h2>
-<p>Generate original princess-style characters with expressive eyes, flowing hair, layered dresses, accessories, and varied paint regions.</p>
-</div>
+    <main>
+      <section id="studioView" class="view active">
+        <div class="hero-card">
+          <h2>Create from a real illustration</h2>
+          <p>Upload a princess-style illustration. The app will simplify colors, detect regions, and turn it into a playable paint-by-number canvas.</p>
+        </div>
 
-<div class="builder-card">
-<label>Princess style
-<select id="princessType">
-<option value="royal">Royal Ball Princess</option>
-<option value="forest">Forest Princess</option>
-<option value="sea">Sea Princess</option>
-<option value="snow">Snow Princess</option>
-<option value="rose">Rose Garden Princess</option>
-<option value="star">Star Princess</option>
-</select>
-</label>
+        <div class="prompt-card">
+          <h3>Suggested image prompt</h3>
+          <p>Use this prompt in an image generator, then upload the result here.</p>
+          <textarea id="promptBox" readonly>Original fairy-tale princess, expressive large eyes, flowing hair, elegant layered dress, magical castle garden background, clean storybook illustration, soft cinematic lighting, polished children’s book art, highly detailed but simple enough for paint by number, no text, no watermark</textarea>
+          <button id="copyPromptBtn">Copy Prompt</button>
+        </div>
 
-<label>Pose
-<select id="poseType">
-<option value="front">Classic Portrait</option>
-<option value="threequarter">Three-Quarter Turn</option>
-<option value="dancing">Dancing Dress</option>
-</select>
-</label>
+        <div class="builder-card">
+          <label>
+            Upload illustration
+            <input id="imageUpload" type="file" accept="image/*" />
+          </label>
 
-<label>Scene
-<select id="sceneType">
-<option value="castle">Castle Glow</option>
-<option value="garden">Royal Garden</option>
-<option value="forest">Enchanted Forest</option>
-<option value="stars">Starry Night</option>
-<option value="ocean">Ocean Balcony</option>
-</select>
-</label>
+          <label>
+            Color count
+            <select id="colorCount">
+              <option value="8">8 colors</option>
+              <option value="12" selected>12 colors</option>
+              <option value="16">16 colors</option>
+              <option value="20">20 colors</option>
+            </select>
+          </label>
 
-<label>Difficulty
-<select id="difficulty">
-<option value="easy">Easy</option>
-<option value="medium" selected>Medium</option>
-<option value="hard">Hard</option>
-</select>
-</label>
+          <label>
+            Detail level
+            <select id="detailLevel">
+              <option value="low">Low detail</option>
+              <option value="medium" selected>Medium detail</option>
+              <option value="high">High detail</option>
+            </select>
+          </label>
 
-<button id="generateBtn" onclick="generateFromControls()">Generate Princess</button>
-</div>
+          <button id="convertBtn">Convert to Paint-by-Number</button>
+        </div>
 
-<div class="saved-section">
-<h3>Saved princesses</h3>
-<div id="savedGrid" class="template-grid"></div>
-</div>
-</section>
+        <div class="preview-grid">
+          <div class="preview-card">
+            <h3>Original</h3>
+            <canvas id="originalCanvas"></canvas>
+          </div>
+          <div class="preview-card">
+            <h3>Simplified Preview</h3>
+            <canvas id="previewCanvas"></canvas>
+          </div>
+        </div>
 
-<section id="paintView" class="view">
-<div class="game-header">
-<div><h2 id="artTitle"></h2><p id="artMeta"></p></div>
-<div class="progress-wrap"><span id="progressText">0%</span><div class="progress-track"><div id="progressBar"></div></div></div>
-</div>
+        <div class="note-card">
+          <h3>Why this version is better</h3>
+          <p>This version starts from a real image instead of trying to draw a princess with simple geometric code. That means the face, hair, dress, pose, and background quality depend on the uploaded illustration, while the app handles the paint-by-number conversion.</p>
+        </div>
+      </section>
 
-<div class="tool-row">
-<button id="newVariantBtn">New Variant</button>
-<button id="hintBtn">Hint</button>
-<button id="undoBtn">Undo</button>
-<button id="resetBtn" class="danger">Reset</button>
-<button id="zoomInBtn">+</button>
-<button id="zoomOutBtn">−</button>
-</div>
+      <section id="paintView" class="view">
+        <div class="game-header">
+          <div>
+            <h2 id="artTitle">Princess Painting</h2>
+            <p id="artMeta"></p>
+          </div>
+          <div class="progress-wrap">
+            <span id="progressText">0%</span>
+            <div class="progress-track"><div id="progressBar"></div></div>
+          </div>
+        </div>
 
-<div id="canvasStage" class="canvas-stage">
-<div id="canvasInner" class="canvas-inner"></div>
-</div>
+        <div class="tool-row">
+          <button id="hintBtn">Hint</button>
+          <button id="undoBtn">Undo</button>
+          <button id="resetBtn" class="danger">Reset</button>
+          <button id="zoomInBtn">+</button>
+          <button id="zoomOutBtn">−</button>
+        </div>
 
-<div id="palette" class="palette"></div>
-</section>
-</main>
+        <div id="canvasStage" class="canvas-stage">
+          <div id="canvasInner" class="canvas-inner"></div>
+        </div>
 
-<div id="toast" class="toast"></div>
-<div id="completeModal" class="modal hidden">
-<div class="modal-card">
-<div class="burst">★</div>
-<h2>Painting complete!</h2>
-<p>Your princess artwork is finished.</p>
-<button id="modalStudioBtn">Back to studio</button>
-</div>
-</div>
-</div>
-<script src="app.js?v=3"></script>
+        <div id="palette" class="palette"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <div id="completeModal" class="modal hidden">
+      <div class="modal-card">
+        <div class="burst">★</div>
+        <h2>Painting complete!</h2>
+        <p>Your image-based paint-by-number is finished.</p>
+        <button id="modalStudioBtn">Back to studio</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=4"></script>
 </body>
 </html>
