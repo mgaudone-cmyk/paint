@@ -16,10 +16,22 @@ const $ = id => document.getElementById(id);
 
 function init(){
   $("imageUpload").addEventListener("change", handleUpload);
-  ["cropZoom","cropX","cropY"].forEach(id => $(id).addEventListener("input", drawCropPreview));
-  $("convertBtn").addEventListener("click", convertImage);
+  
+["cropZoom","cropX","cropY"].forEach(id => $(id).addEventListener("input", ()=>{drawCropPreview(); invalidatePreview();}));
+["colorCount","imageMode","regionSize"].forEach(id => $(id).addEventListener("change", invalidatePreview));
+
+  
+$("previewBtn").addEventListener("click", previewConversion);
+$("commitBtn").addEventListener("click", commitConversion);
+
   $("studioBtn").addEventListener("click", showStudio);
-  $("togglePreviewBtn").addEventListener("click",()=>{colorPreview=!colorPreview;drawPaintCanvas();$("togglePreviewBtn").textContent=colorPreview?"Paint Mode":"Color Preview";});
+  
+$("fitBtn").addEventListener("click", fitToScreen);
+$("centerBtn").addEventListener("click", centerCanvas);
+$("sectionsBtn").addEventListener("click",()=> $("sectionNav").classList.toggle("hidden"));
+$("sectionNav").querySelectorAll("button").forEach(btn=>btn.addEventListener("click",()=>jumpToSection(btn.dataset.pos)));
+$("togglePreviewBtn").addEventListener("click",()=>{colorPreview=!colorPreview;drawPaintCanvas();$("togglePreviewBtn").textContent=colorPreview?"Paint Mode":"Color Preview";});
+
   $("hintBtn").addEventListener("click", showHint);
   $("undoBtn").addEventListener("click", undo);
   $("resetBtn").addEventListener("click", resetCurrent);
@@ -63,7 +75,8 @@ function handleUpload(e){
   img.onload = () => {
     uploadedImage = img;
     drawCropPreview();
-    showToast("Image loaded. Convert when ready.");
+    invalidatePreview();
+    showToast("Image loaded. Preview when ready.");
   };
   img.src = URL.createObjectURL(file);
 }
@@ -101,24 +114,33 @@ function drawCropPreview(){
   drawCroppedToCanvas($("cropCanvas"), 600);
 }
 
-function convertImage(){
+function previewConversion(){
   if(!uploadedImage) return showToast("Upload an image first.");
-  showToast("Converting clean regions...");
+  showToast("Generating preview...");
   setTimeout(()=>{
     const colorCount = Number($("colorCount").value);
     const mode = $("imageMode").value;
     const regionSize = $("regionSize").value;
     template = buildTemplate(colorCount, mode, regionSize);
-    state.selectedColor = 1;
     state.completed = new Set();
     state.undoStack = [];
-    state.zoom = 1;
-    state.pan = {x:0,y:0};
-    colorPreview = false;
-    $("togglePreviewBtn").textContent = "Color Preview";
     drawSimplifiedPreview();
-    startPainting();
+    $("commitBtn").disabled = false;
+    showToast("Preview ready. Adjust settings or commit.");
   },50);
+}
+
+function commitConversion(){
+  if(!template) return showToast("Preview first.");
+  state.selectedColor = 1;
+  state.completed = new Set();
+  state.undoStack = [];
+  state.zoom = 1;
+  state.pan = {x:0,y:0};
+  colorPreview = false;
+  $("togglePreviewBtn").textContent = "Color Preview";
+  startPainting();
+  setTimeout(fitToScreen, 80);
 }
 
 function buildTemplate(colorCount, mode, regionSize){
@@ -434,7 +456,47 @@ function showStudio(){
   $("completeModal").classList.add("hidden");
 }
 
-function setZoom(v){state.zoom=Math.max(.65,Math.min(3,v));applyTransform();}
+
+function invalidatePreview(){
+  const btn = $("commitBtn");
+  if(btn) btn.disabled = true;
+}
+
+function fitToScreen(){
+  if(!template) return;
+  state.zoom = 1;
+  state.pan = {x:0,y:0};
+  applyTransform();
+}
+
+function centerCanvas(){
+  state.pan = {x:0,y:0};
+  applyTransform();
+}
+
+function jumpToSection(pos){
+  if(!template) return;
+  const stage = $("canvasStage");
+  const canvas = $("paintCanvas");
+  const stageRect = stage.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+
+  const maxX = Math.max(0, (canvasRect.width * state.zoom - stageRect.width) / 2);
+  const maxY = Math.max(0, (canvasRect.height * state.zoom - stageRect.height) / 2);
+
+  const map = {
+    tl:[maxX,maxY], tc:[0,maxY], tr:[-maxX,maxY],
+    cl:[maxX,0], cc:[0,0], cr:[-maxX,0],
+    bl:[maxX,-maxY], bc:[0,-maxY], br:[-maxX,-maxY]
+  };
+
+  const target = map[pos] || [0,0];
+  state.pan = {x:target[0], y:target[1]};
+  if(state.zoom < 1.4) state.zoom = 1.4;
+  applyTransform();
+}
+
+function setZoom(v){state.zoom=Math.max(.65,Math.min(4,v));applyTransform();}
 function applyTransform(){$("canvasInner").style.transform=`translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`;}
 function showToast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
 function colorDist(a,b){return(a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2;}

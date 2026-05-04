@@ -66,7 +66,8 @@
 </select>
 </label>
 
-<button id="convertBtn">Convert</button>
+<button id="previewBtn">Preview Conversion</button>
+<button id="commitBtn" class="accent-btn" disabled>Commit to Paint</button>
 </div>
 
 <div class="preview-grid">
@@ -99,12 +100,27 @@
 </div>
 
 <div class="tool-row">
+<button id="fitBtn">Fit</button>
+<button id="centerBtn">Center</button>
+<button id="sectionsBtn">Sections</button>
 <button id="togglePreviewBtn">Color Preview</button>
 <button id="hintBtn">Hint</button>
 <button id="undoBtn">Undo</button>
 <button id="resetBtn" class="danger">Reset</button>
 <button id="zoomInBtn">+</button>
 <button id="zoomOutBtn">−</button>
+</div>
+
+<div id="sectionNav" class="section-nav hidden">
+<button data-pos="tl">Top Left</button>
+<button data-pos="tc">Top</button>
+<button data-pos="tr">Top Right</button>
+<button data-pos="cl">Left</button>
+<button data-pos="cc">Center</button>
+<button data-pos="cr">Right</button>
+<button data-pos="bl">Bottom Left</button>
+<button data-pos="bc">Bottom</button>
+<button data-pos="br">Bottom Right</button>
 </div>
 
 <div id="canvasStage" class="canvas-stage">
@@ -128,6 +144,6 @@
 </div>
 </div>
 
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

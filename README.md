@@ -21,4 +21,13 @@ Replace your files with:
 
 Open:
 
-https://mgaudone-cmyk.github.io/paint/?v=6
+https://mgaudone-cmyk.github.io/paint/?v=7
+
+
+## V6 changes
+
+- Preview conversion before committing
+- Commit button stays disabled until preview is generated
+- Fit, Center, and Sections navigation controls
+- 9-position quick navigation for large images
+- Settings changes invalidate the preview so users can adjust and regenerate before painting

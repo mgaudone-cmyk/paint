@@ -28,3 +28,12 @@ input[type=range]{width:100%}
 .modal{position:fixed;inset:0;background:rgba(24,20,30,.54);display:grid;place-items:center;padding:20px;z-index:40}.modal-card{background:#fff;border-radius:28px;padding:28px;text-align:center;max-width:360px;box-shadow:var(--shadow)}.burst{font-size:54px;animation:pop .75s ease infinite alternate}
 @keyframes pop{from{transform:scale(1)}to{transform:scale(1.13) rotate(8deg)}}
 @media(max-width:930px){.builder-card,.builder-card.second,.game-header,.preview-grid{grid-template-columns:1fr}.progress-wrap{text-align:left}.topbar h1{font-size:25px}}
+
+.accent-btn{background:linear-gradient(90deg,#8b5cf6,#d946ef)}
+.accent-btn:disabled{opacity:.45;cursor:not-allowed}
+.section-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px}
+.section-nav button{background:#fff;color:var(--ink);border:1px solid var(--line);font-size:13px;padding:10px 8px}
+.section-nav.hidden{display:none!important}
+.canvas-stage{position:relative}
+.canvas-stage::after{content:"Pinch-style: use +/−, then drag blank area to move";position:absolute;left:12px;right:12px;bottom:10px;background:rgba(255,255,255,.85);border:1px solid var(--line);border-radius:999px;padding:8px 10px;font-size:12px;color:var(--muted);text-align:center;pointer-events:none}
+@media(max-width:930px){.builder-card.second{grid-template-columns:1fr}.section-nav{grid-template-columns:repeat(3,1fr)}}
